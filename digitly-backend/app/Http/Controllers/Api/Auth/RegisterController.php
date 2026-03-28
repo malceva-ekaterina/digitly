@@ -24,7 +24,7 @@ class RegisterController extends Controller
 
         SendEmailVerificationNotification::dispatch($user);
 
-        return response()->json(['user' => $user], 201);
+        return response()->json(['message'=> 'User created successfully','user' => $user], 201);
 
     }
 }
