@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\Auth\LoginController;
 use App\Http\Controllers\Api\Auth\RegisterController;
+use App\Http\Controllers\Api\Auth\ResetPasswordController;
 use App\Http\Controllers\Api\Auth\VerifyEmailController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -19,7 +20,12 @@ Route::prefix('v1')->group(function() {
         Route::middleware(['auth:sanctum', 'verified'])->group(function() {
             Route::post('logout', [LoginController::class, 'logout']);
             Route::get('me', [LoginController::class, 'me']);
-        });
+
+            });
+
+        Route::post('password/forgot', [ResetPasswordController::class, 'forgot']);
+        Route::post('password/reset', [ResetPasswordController::class, 'reset']);
+
     });
 
     Route::get('email/verify/{id}/{hash}', [VerifyEmailController::class, 'verify'])
