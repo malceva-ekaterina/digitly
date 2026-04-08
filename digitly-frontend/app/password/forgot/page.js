@@ -1,4 +1,8 @@
+"use client";
+import { useRouter } from 'next/navigation';
+
 export default function PasswordRecoveryEmail() {
+    const router = useRouter();
   return (  
     <div className="min-h-screen bg-cover bg-center bg-no-repeat grid place-items-center p-4" 
       style={{ backgroundImage: "url('/bagraund.png')" }}>
@@ -35,6 +39,14 @@ export default function PasswordRecoveryEmail() {
               className="px-6 py-2 rounded-xl bg-red-300 font-sans text-white hover:bg-red-400 transition-colors mt-4">Отправить</button>
 
             </form>
+            {/* Кнопка назад */}
+              <button 
+                  type="button"
+                  onClick={() => router.back()}
+                  className="mt-3 text-sm text-gray-500 hover:text-gray-700"
+              >
+                  ← Назад
+              </button>
           </div>      
         </div>
       </div>

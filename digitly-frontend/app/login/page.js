@@ -111,6 +111,14 @@ export default function Login() {
                   className="hover:underline mt-4  text-sm sm:text-base">
               Забыли пароль?
             </Link>
+            {/* Кнопка назад */}
+              <button 
+                  type="button"
+                  onClick={() => router.back()}
+                  className="mt-3 text-sm text-gray-500 hover:text-gray-700"
+              >
+                  ← Назад
+              </button>
           </div>
         </div>
         
