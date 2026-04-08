@@ -306,6 +306,8 @@ export default function PasswordRecoveryEmail() {
               <img src="chifra/arrow.png" alt="стрелка" className="w-4 h-4" />
             </Link>
           </div>
+        </div>
+      </div>
     </div>
   );
 }
