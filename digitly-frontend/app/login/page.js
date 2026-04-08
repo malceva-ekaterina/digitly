@@ -51,12 +51,12 @@ export default function Login() {
               className="w-6 sm:w-7 md:w-8" 
             />
             
-            <p className="text-center font-sans font-bold text-2xl sm:text-3xl md:text-4xl"> Войти в систему</p>
+            <p className="text-center font-sans font-bold text-2xl sm:text-3xl md:text-4xl text-black"> Войти в систему</p>
 
             <form onSubmit={handleSubmit} className="w-full flex flex-col items-center">
               
               <div className="w-full max-w-[384px]">
-                <p className="font-sans text-xl mb-1 text-left mt-4">Email</p>
+                <p className="font-sans text-xl mb-1 text-left mt-4 text-black">Email</p>
               </div>
               <input 
                 type="email" 
@@ -69,7 +69,7 @@ export default function Login() {
               />
 
               <div className="w-full max-w-[384px]">
-                <p className="font-sans text-xl mb-1 text-left  mt-4">Пароль</p>
+                <p className="font-sans text-xl mb-1 text-left  mt-4 text-black">Пароль</p>
               </div>
 
               <input 
