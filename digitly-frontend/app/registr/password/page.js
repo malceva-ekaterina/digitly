@@ -54,7 +54,7 @@ export default function RegitrPassword() {
     try {
       // Отправка данных на сервер
       // интеграция с бэкендом
-      const response = await fetch('', {
+      const response = await fetch('/api/v1/auth/register', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

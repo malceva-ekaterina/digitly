@@ -6,7 +6,7 @@ export async function POST(request) {
     
     // Отправляем запрос на бекенд 
     // интеграция с бэкендом
-    const response = await fetch('', {
+    const response = await fetch('/api/auth/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password }),

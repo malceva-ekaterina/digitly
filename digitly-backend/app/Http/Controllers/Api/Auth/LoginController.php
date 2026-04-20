@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\Auth;
 
+use App\Events\LoginSuccessful;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
 use App\Models\User;
@@ -29,6 +30,8 @@ class LoginController extends Controller
             return  response()->json(['message' => 'Users email is not verified'], 403);
 
         }
+
+        event(new LoginSuccessful($user, $request));
 
         $token = $user ->createToken('auth_token')->plainTextToken;
 

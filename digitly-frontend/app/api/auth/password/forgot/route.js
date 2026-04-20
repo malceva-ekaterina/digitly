@@ -4,7 +4,7 @@ export async function POST(request) {
   try {
     const { email } = await request.json();
         // интеграция с бэкендом
-    const response = await fetch('', {
+    const response = await fetch('/api/v1/auth/forgot', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email }),

@@ -18,6 +18,9 @@ class RegisterController extends Controller
             'fullname' => $request->fullname,
             'password' => Hash::make($request->password),
             'email' => $request->email,
+            'phone_number' => $request->phone_number,
+            'accepted_terms_at' => now(),
+            'accepted_privacy_at' => now()
         ]);
 
         SendEmailVerificationNotification::dispatch($user);

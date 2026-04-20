@@ -24,9 +24,19 @@ class RegisterRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'fullname' => ['required'],
+            'fullname' => ['required', 'max:150'],
             'password' => ['required', Password::min(8)->letters()->numbers()],
             'email' => ['required', 'email', 'unique:users,email'],
+            'accepted_terms_at' => ['required'],
+            'accepted_privacy_at' => ['required'],
+        ];
+    }
+
+    public function messages()
+    {
+        return [
+            'accepted_terms_at.required' => 'Необходимо принять условия',
+            'accepted_privacy_at.required' => 'Необходимо принять условия политики конфиденциальности',
         ];
     }
 }

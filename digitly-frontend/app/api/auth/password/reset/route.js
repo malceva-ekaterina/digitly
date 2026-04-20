@@ -4,7 +4,7 @@ export async function POST(request) {
   try {
     const { email, token, password, password_confirmation } = await request.json();
     // интеграция с бэкендом
-    const response = await fetch('', {
+    const response = await fetch('http://localhost:8000/api/v1/auth/reset', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, token, password, password_confirmation }),
