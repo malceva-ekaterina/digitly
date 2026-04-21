@@ -27,6 +27,7 @@ class UserListScreen extends Screen
     {
         return [
             'users' => User::with('roles')
+                ->withTrashed()
                 ->filters(UserFiltersLayout::class)
                 ->defaultSort('id', 'desc')
                 ->paginate(),
@@ -117,5 +118,11 @@ class UserListScreen extends Screen
         User::findOrFail($request->get('id'))->delete();
 
         Toast::info(__('User was removed'));
+    }
+    public function restore($id): void
+    {
+        User::withTrashed()->findOrFail($id)->restore();
+
+        Toast::info('Пользователь восстановлен');
     }
 }

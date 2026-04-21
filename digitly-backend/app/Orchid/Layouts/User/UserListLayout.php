@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Orchid\Layouts\User;
 
 use App\Models\User;
+use Illuminate\Support\Facades\Auth;
 use Orchid\Screen\Actions\Button;
 use Orchid\Screen\Actions\DropDown;
 use Orchid\Screen\Actions\Link;
@@ -45,28 +46,22 @@ class UserListLayout extends Table
                     ->asyncParameters([
                         'user' => $user->id,
                     ])),
+            TD::make('deleted_at', 'Статус')
+                ->render(function ($user) {
+                    return $user->deleted_at ? 'удален' : 'активен';
+                })->filter(),
 
-            TD::make('permissions', __('Permissions'))
-                ->sort()
-                ->cantHide()
-                ->filter(Input::make())
-                ->render(fn (User $user) => ModalToggle::make($user->permissions)
-                    ->modal('editUserModal')
-                    ->modalTitle($user->presenter()->title())
-                    ->method('saveUser')
-                    ->asyncParameters([
-                        'user' => $user->id,
-                    ])),
+            // TD::make('permissions', __('Permissions')),
 
-            TD::make('created_at', __('Created'))
+            TD::make('created_at', 'Дата регистрации')
+                ->usingComponent(DateTimeSplit::class)
+                ->align(TD::ALIGN_RIGHT)
+                ->sort(),
+
+                TD::make('updated_at', __('Last edit'))
                 ->usingComponent(DateTimeSplit::class)
                 ->align(TD::ALIGN_RIGHT)
                 ->defaultHidden()
-                ->sort(),
-
-            TD::make('updated_at', __('Last edit'))
-                ->usingComponent(DateTimeSplit::class)
-                ->align(TD::ALIGN_RIGHT)
                 ->sort(),
 
             TD::make(__('Actions'))
@@ -85,6 +80,13 @@ class UserListLayout extends Table
                             ->confirm(__('Once the account is deleted, all of its resources and data will be permanently deleted. Before deleting your account, please download any data or information that you wish to retain.'))
                             ->method('remove', [
                                 'id' => $user->id,
+                            ])->canSee(Auth::user()->hasAccess('platform.users.delete')),
+                        Button::make('Восстановить')
+                            ->canSee($user->trashed() && Auth::user()->hasAccess('platform.users.delete'))
+                            ->icon('bs.arrow-clockwise')
+                            ->confirm(__('Вы уверены, что хотите восстановить пользователя?'))
+                            ->method('restore', [
+                                'id' => $user->id
                             ]),
                     ])),
         ];

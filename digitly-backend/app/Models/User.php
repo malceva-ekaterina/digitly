@@ -12,10 +12,11 @@ use Orchid\Filters\Types\Like;
 use Orchid\Filters\Types\Where;
 use Orchid\Filters\Types\WhereDateStartEnd;
 use Orchid\Platform\Models\User as Authenticatable;
+use Orchid\Screen\AsSource;
 
 class User extends Authenticatable
 {
-    use HasFactory, Notifiable, HasApiTokens, SoftDeletes, Attachable;
+    use HasFactory, Notifiable, HasApiTokens, SoftDeletes, Attachable, AsSource;
     /**
      * The attributes that are mass assignable.
      *
@@ -70,6 +71,7 @@ class User extends Authenticatable
            'email'      => Like::class,
            'updated_at' => WhereDateStartEnd::class,
            'created_at' => WhereDateStartEnd::class,
+           'deleted_at' => WhereDateStartEnd::class,
     ];
 
     /**
@@ -96,13 +98,13 @@ class User extends Authenticatable
 
     public function institutions()
     {
-        $this->belongsToMany(Institution::class, 'user_instutions');
+        return $this->belongsToMany(Institution::class, 'user_institutions')->withPivot('role');
     }
 
-    public function userInstitutions()
-    {
-        $this->hasMany(UserInstitution::class);
-    }
+    // public function userInstitutions()
+    // {
+    //     $this->hasMany(UserInstitution::class);
+    // }
 
     public function invinter()
     {

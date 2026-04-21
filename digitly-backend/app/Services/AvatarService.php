@@ -4,14 +4,10 @@ namespace App\Services;
 
 use App\Models\User;
 use Illuminate\Http\UploadedFile;
-// use Intervention\Image\ImageManager;
 use Orchid\Attachment\File;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Str;
 use Intervention\Image\Laravel\Facades\Image;
 use Orchid\Attachment\Models\Attachment;
-use Intervention\Image\ImageManager;
-use Intervention\Image\Drivers\Imagick\Driver;
+
 class AvatarService
 {
     protected string $disk = 'local';

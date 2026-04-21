@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\Auth\LoginController;
 use App\Http\Controllers\Api\Auth\RegisterController;
 use App\Http\Controllers\Api\Auth\ResetPasswordController;
 use App\Http\Controllers\Api\Auth\VerifyEmailController;
+use App\Http\Controllers\Api\InstitutionController;
 use App\Http\Controllers\Api\ProfileController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -40,5 +41,13 @@ Route::prefix('v1')->group(function() {
         Route::get('login-history', [ProfileController::class, 'loginHistory']);
         Route::delete('terminate-all-sessions', [ProfileController::class, 'terminateAllSessions']);
         Route::delete('delete-account', [ProfileController::class, 'delete']);
+    });
+
+    Route::prefix('institutions')->middleware(['auth:sanctum', 'verified'])->group(function() {
+        Route::post('apply', [InstitutionController::class, 'apply']);
+        Route::get('my', [InstitutionController::class, 'my']);
+        Route::get('check-inn', [InstitutionController::class, 'checkInn'])->middleware('throttle:10,60');
+        Route::post('join-request', [InstitutionController::class, 'joinRequest']);
+
     });
 });

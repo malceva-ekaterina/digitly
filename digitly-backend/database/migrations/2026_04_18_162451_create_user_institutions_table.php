@@ -17,7 +17,7 @@ return new class extends Migration
             $table->foreignId('institution_id')->constrained('institutions');
             $table->string('role', 50);
             $table->foreignId('invited_by')->nullable()->constrained('users');
-            $table->timestamps('joined_at');
+            $table->timestamp('joined_at');
         });
     }
 

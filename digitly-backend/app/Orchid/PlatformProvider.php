@@ -34,7 +34,7 @@ class PlatformProvider extends OrchidServiceProvider
     public function menu(): array
     {
         return [
-            Menu::make('Get Started')
+            /*Menu::make('Get Started')
                 ->icon('bs.book')
                 ->title('Navigation')
                 ->route(config('platform.index')),
@@ -47,7 +47,7 @@ class PlatformProvider extends OrchidServiceProvider
             Menu::make('Form Elements')
                 ->icon('bs.card-list')
                 ->route('platform.example.fields')
-                ->active('*/examples/form/*'),
+                ->active('examples/form/*'),
 
             Menu::make('Layouts Overview')
                 ->icon('bs.window-sidebar')
@@ -64,7 +64,12 @@ class PlatformProvider extends OrchidServiceProvider
             Menu::make('Cards')
                 ->icon('bs.card-text')
                 ->route('platform.example.cards')
-                ->divider(),
+                ->divider(),*/
+
+            Menu::make('Организации')
+                ->icon('bs.people-fill')
+                ->route('platform.institution')
+                ->permission('platform.systems.users'),
 
             Menu::make(__('Users'))
                 ->icon('bs.people')
@@ -103,6 +108,10 @@ class PlatformProvider extends OrchidServiceProvider
             ItemPermission::group(__('System'))
                 ->addPermission('platform.systems.roles', __('Roles'))
                 ->addPermission('platform.systems.users', __('Users')),
+            ItemPermission::group('Управление пользователями')
+                ->addPermission('platform.users.view', 'Просмотр списка')
+                ->addPermission('platform.users.edit', 'Редактирование')
+                ->addPermission('platform.users.delete', 'Блокировка/Удаление'),
         ];
     }
 }

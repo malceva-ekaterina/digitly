@@ -16,6 +16,7 @@ class Institution extends Model
         'actual_address_id',
         'contact_email',
         'contact_phone',
+        'application_scan',
         'logotype_id',
         'signature_id',
         'seal_id',
@@ -35,7 +36,8 @@ class Institution extends Model
 
     public function users()
     {
-        return $this->belongsToMany(User::class, 'user_institutions');
+        return $this->belongsToMany(User::class, '> $user->user_institutions
+= null');
     }
 
     public function institutionUsers()

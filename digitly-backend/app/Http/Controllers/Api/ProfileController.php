@@ -15,6 +15,7 @@ use Intervention\Image\Laravel\Facades\Image;
 use Orchid\Attachment\File;
 // use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Hash;
 use Orchid\Attachment\Models\Attachment;
 
 class ProfileController extends Controller
@@ -71,6 +72,11 @@ class ProfileController extends Controller
     public function delete(Request $request)
     {
         $user = $request->user();
+
+        if (!Hash::check($request->password, $user->password))
+        {
+            return response()->json(['message' => 'Incorrect password']);
+        }
 
         $user->tokens()->delete();
         $user->anonymize();
