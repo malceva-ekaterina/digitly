@@ -112,6 +112,9 @@ class PlatformProvider extends OrchidServiceProvider
                 ->addPermission('platform.users.view', 'Просмотр списка')
                 ->addPermission('platform.users.edit', 'Редактирование')
                 ->addPermission('platform.users.delete', 'Блокировка/Удаление'),
+            ItemPermission::group('Управление ОО')
+                ->addPermission('platform.institution.apply', 'Одобрение компании')
+                ->addPermission('platform.institution.reject', 'Отклонение компании'),
         ];
     }
 }

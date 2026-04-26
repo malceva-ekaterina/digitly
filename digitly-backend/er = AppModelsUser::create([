@@ -1,0 +1,10 @@
+[90m= [39m[34;4mApp\Models\User[39;24m {#6142
+    [34mfullname[39m: "[32mAdmin Name[39m",
+    [34memail[39m: "[32madmin@admin.com[39m",
+    #[33mpassword[39m: "[32m$2y$12$JyYdJiEOSUw.YdhLNEG5Z.6YeAq43wMvEFxY.pqV7aI/S.4L/U8cy[39m",
+    #[33mpermissions[39m: "[32m{"platform.systems.roles":true,"platform.systems.users":true,"platform.systems.attachment":true,"platform.users.view":true,"platform.users.edit":true,"platform.users.delete":true,"platform.institution.apply":true,"platform.institution.reject":true,"platform.index":true}[39m",
+    [34mupdated_at[39m: "[32m2026-04-22 09:15:36[39m",
+    [34mcreated_at[39m: "[32m2026-04-22 09:15:36[39m",
+    [34mid[39m: [35m1[39m,
+  }
+

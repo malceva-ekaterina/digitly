@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('institution_question_bank_access', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('institution_id')->constrained('institutions')->onDelete('set null');
+            $table->foreignId('institution_id')->constrained('institutions')->onDelete('cascade');
             $table->foreignId('question_bank_id')->constrained('question_banks')->onDelete('restrict');
             $table->unsignedBigInteger('order_item_id')->nullable();
             $table->timestamp('purchased_at');

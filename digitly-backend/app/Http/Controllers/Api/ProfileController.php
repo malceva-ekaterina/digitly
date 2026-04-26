@@ -7,6 +7,7 @@ use App\Http\Requests\Profile\AvatarUploadRequest;
 use App\Http\Requests\Profile\UpdateProfileRequest;
 use App\Http\Resources\Profile\LoginHistoryResource;
 use App\Http\Resources\Profile\ProfileResource;
+use App\Http\Resources\Profile\UserInstitutionsResource;
 // use App\Models\User;
 // use App\Models\UserLoginHistory;
 use App\Services\AvatarService;
@@ -31,7 +32,6 @@ class ProfileController extends Controller
 
     public function update(UpdateProfileRequest $request)
     {
-        $request->validated();
         $user = $request->user();
 
         $user->update($request->all());
@@ -41,8 +41,6 @@ class ProfileController extends Controller
 
     public function uploadAvatar(AvatarUploadRequest $request)
     {
-
-        $request->validated();
 
         $attachment = $this->avatarService->upload(
             $request->user(),
@@ -115,5 +113,12 @@ class ProfileController extends Controller
         return response()->json([
             'message' => 'Все остальные сессии завершены',
         ]);
+    }
+
+    public function getInstitutions(Request $request)
+    {
+        $user = $request->user();
+        $institution = $user->institutions()->get();
+        return response()->json(['data' => UserInstitutionsResource::collection($institution)]);
     }
 }

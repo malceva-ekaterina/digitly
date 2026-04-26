@@ -30,6 +30,7 @@ return new class extends Migration
             $table->string('status', 50)->default('pending');
             $table->foreignId('moderated_by')->nullable()->constrained('users')->onDelete('set null');
             $table->timestamp('moderated_at')->nullable();
+            $table->text('moderation_comment')->nullable();
             $table->boolean('is_requisites_pending')->default(0);
             $table->timestamps();
         });

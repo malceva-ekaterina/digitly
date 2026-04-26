@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use Orchid\Platform\Models\Role;
 
 class DatabaseSeeder extends Seeder
 {
@@ -16,10 +17,18 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         // User::factory(10)->create();
-
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
+        Role::create([
+            'slug' => 'admin',
+            'name' => 'admin'
         ]);
+        Role::create([
+            'slug' => 'moderator',
+            'name' => 'moderator'
+        ]);
+
+        // User::factory()->create([
+        //     'fullname' => 'Test User',
+        //     'email' => 'test@example.com',
+        // ]);
     }
 }

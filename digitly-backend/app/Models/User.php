@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
@@ -11,6 +12,7 @@ use Orchid\Attachment\Models\Attachment;
 use Orchid\Filters\Types\Like;
 use Orchid\Filters\Types\Where;
 use Orchid\Filters\Types\WhereDateStartEnd;
+use Orchid\Platform\Models\Role;
 use Orchid\Platform\Models\User as Authenticatable;
 use Orchid\Screen\AsSource;
 
@@ -95,33 +97,32 @@ class User extends Authenticatable
     {
         return $this->hasMany(UserLoginHistory::class);
     }
-
+    // ОО
     public function institutions()
     {
         return $this->belongsToMany(Institution::class, 'user_institutions')->withPivot('role');
     }
 
-    // public function userInstitutions()
-    // {
-    //     $this->hasMany(UserInstitution::class);
-    // }
-
-    public function invinter()
+    public function userInstitutions()
     {
-        $this->hasMany(UserInstitution::class, 'invinter_by');
+        $this->hasMany(UserInstitution::class);
+    }
+
+    public function inviter()
+    {
+        $this->hasMany(UserInstitution::class, 'invited_by');
     }
 
     public function processedPayouts()
     {
         $this->hasMany(InstitutionPayout::class, 'processed_by');
     }
-
+    // аватарка
     public function avatar()
     {
-    // Используем belongsTo, так как avatar_id находится в таблице users
-    return $this->belongsTo(Attachment::class, 'avatar_id');
+        return $this->belongsTo(Attachment::class, 'avatar_id');
     }
-
+    // анонимизация пользователя
     public function anonymize(): void
     {
         $this->update([
@@ -136,4 +137,39 @@ class User extends Authenticatable
             'remember_token' => null,
         ]);
     }
+
+    public function isInstitutionAdmin($institution)
+    {
+        return $this->institutions()
+                    ->where('institution_id', $institution->id)
+                    ->wherePivot('role', 'institution_admin')
+                    ->exists();
+    }
+
+    //олимпиады
+    public function creatorOlympiads()
+    {
+        return $this->hasMany(Olympiad::class, 'created_by');
+    }
+
+    public function moderatorOlympiads()
+    {
+        return $this->hasMany(Olympiad::class, 'moderated_by');
+    }
+
+    public function creatorQuestions()
+    {
+        return $this->hasMany(Question::class, 'created_by');
+    }
+
+    public function moderatorOlympiadModerationLogs()
+    {
+        return $this->hasMany(OlympiadModerationLog::class, 'moderator_id');
+    }
+
+    public function creatorQuestionBanks()
+    {
+        return $this->hasMany(QuestionBank::class, 'created_by');
+    }
+
 }

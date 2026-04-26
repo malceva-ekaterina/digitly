@@ -41,6 +41,7 @@ Route::prefix('v1')->group(function() {
         Route::get('login-history', [ProfileController::class, 'loginHistory']);
         Route::delete('terminate-all-sessions', [ProfileController::class, 'terminateAllSessions']);
         Route::delete('delete-account', [ProfileController::class, 'delete']);
+        Route::get('institutions', [ProfileController::class, 'getInstitutions']);
     });
 
     Route::prefix('institutions')->middleware(['auth:sanctum', 'verified'])->group(function() {
@@ -48,6 +49,15 @@ Route::prefix('v1')->group(function() {
         Route::get('my', [InstitutionController::class, 'my']);
         Route::get('check-inn', [InstitutionController::class, 'checkInn'])->middleware('throttle:10,60');
         Route::post('join-request', [InstitutionController::class, 'joinRequest']);
+        Route::get('{id}/status', [InstitutionController::class, 'checkStatus']);
+        Route::get('institutions/{id}/members', [InstitutionController::class, 'getMembers']);
+        Route::get('{id}/members', [InstitutionController::class, 'getMembers']);
+        Route::post('{id}/members', [InstitutionController::class, 'addMember']);
+        Route::delete('{id}/members/{userId}', [InstitutionController::class, 'deleteMember']);
+        Route::put('{id}/members/{userId}', [InstitutionController::class, 'updateMember']);
+        Route::get('{id}/dashboard', [InstitutionController::class, 'index']);
 
+
+        // Route::post('{id}/olympiads')
     });
 });

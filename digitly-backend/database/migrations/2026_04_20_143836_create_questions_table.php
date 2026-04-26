@@ -19,7 +19,7 @@ return new class extends Migration
             $table->string('type', 50);
             $table->decimal('weight', 5, 2)->default(1.00);
             $table->json('metadata');
-            $table->tinyInteger('random_options');
+            $table->tinyInteger('random_options')->default(0);
             $table->timestamps();
         });
     }

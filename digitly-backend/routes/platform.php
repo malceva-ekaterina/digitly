@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Http\Controllers\Api\InstitutionController;
 use App\Models\Institution;
 use App\Orchid\Screens\Examples\ExampleActionsScreen;
 use App\Orchid\Screens\Examples\ExampleCardsScreen;
@@ -105,3 +106,5 @@ Route::screen('example', ExampleScreen::class)
 
 // Route::screen('idea', Idea::class, 'platform.screens.idea');
 Route::screen('institution', InstitutionModerationScreen::class)->name('platform.institution');
+Route::post('institution/{id}/approve', [InstitutionController::class, 'approve'])->name('platform.institution.approve');
+Route::post('institution/{id}/reject', [InstitutionController::class, 'reject'])->name('platform.institution.reject');
