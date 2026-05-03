@@ -1,7 +1,7 @@
 "use client";
-import { useState, useEffect, useRef } from "react";
-import { useRouter } from "next/navigation";
 import Link from 'next/link';
+import { useState, useEffect, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 
 //  МАССИВЫ С ДАННЫМИ 
 // Массив отзывов
@@ -87,7 +87,7 @@ const allColleges = [
   }
 ];
 
-// ========== КОМПОНЕНТ КАРТОЧКИ КОЛЛЕДЖА ==========
+// КОМПОНЕНТ КАРТОЧКИ КОЛЛЕДЖА 
 function CollegeCard({ college, isActive = false }) {
   const shortName = college.name.length > 45 
     ? college.name.substring(0, 45) + "..." 
