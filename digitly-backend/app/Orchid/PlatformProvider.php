@@ -71,6 +71,11 @@ class PlatformProvider extends OrchidServiceProvider
                 ->route('platform.institution')
                 ->permission('platform.systems.users'),
 
+            Menu::make('Олимпиады')
+                ->icon('bs.card-list')
+                ->route('platform.olympiads'),
+                // ->permission('platform.systems.users'),
+
             Menu::make(__('Users'))
                 ->icon('bs.people')
                 ->route('platform.systems.users')

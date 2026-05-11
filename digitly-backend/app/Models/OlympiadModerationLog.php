@@ -7,11 +7,13 @@ use Illuminate\Database\Eloquent\Model;
 class OlympiadModerationLog extends Model
 {
     public $table = 'olympiad_moderation_log';
+    public $timestamps = false;
     protected $fillable = [
         'olympiad_id',
         'moderator_id',
         'action',
         'comment',
+        'created_at'
     ];
 
     protected $casts = [

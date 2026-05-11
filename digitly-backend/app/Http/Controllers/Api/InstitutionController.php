@@ -11,9 +11,11 @@ use App\Models\Institution;
 use App\Models\User;
 use App\Notifications\InstitutionApproved;
 use App\Notifications\InstitutionRejected;
+use App\Notifications\NewInstitution;
 use App\Notifications\UserAddedToInstitution;
 use App\Services\InstitutionService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Notification;
 use Orchid\Support\Facades\Toast;
 
 
@@ -45,6 +47,9 @@ class InstitutionController extends Controller
             'role' => 'institution_admin',
             'joined_at' => now()
         ]);
+
+        $admins = User::admins()->get();
+        Notification::send($admins, new NewInstitution($institution));
 
         return response()->json([
             'success' => true,
@@ -264,7 +269,7 @@ class InstitutionController extends Controller
         $institution = Institution::findOrFail($id);
         return response()->json(['data' => [
             'status' => $institution->status,
-            'accumulated_minor' => $institution->financials()->get()->accumulated_minor
+            // 'accumulated_minor' => $institution->financials()->get()->accumulated_minor
         ]]);
     }
 }

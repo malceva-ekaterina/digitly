@@ -2,26 +2,24 @@
 
 namespace App\Notifications;
 
-use App\Models\Institution;
+use App\Models\Olympiad;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
-use Illuminate\Queue\SerializesModels;
 use Orchid\Platform\Notifications\DashboardChannel;
 use Orchid\Platform\Notifications\DashboardMessage;
 
-class NewInstitution extends Notification implements ShouldQueue
+class NewOlympiad extends Notification implements ShouldQueue
 {
-    use Queueable, SerializesModels;
-    protected $institution;
-
+    use Queueable;
+    protected $olympiad;
     /**
      * Create a new notification instance.
      */
-    public function __construct(Institution $institution)
+    public function __construct(Olympiad $olympiad)
     {
-        $this->institution = $institution;
+        $this->olympiad = $olympiad;
     }
 
     /**
@@ -40,8 +38,15 @@ class NewInstitution extends Notification implements ShouldQueue
     public function toMail(object $notifiable): MailMessage
     {
         return (new MailMessage)
-            ->subject('Новая заявка на вступление')
-            ->line("{$this->institution->fullname} подала заявку на регистрацию");
+            ->subject("Олимпиада поступила на модерацию")
+            ->line("Олимпиада {$this->olympiad->title} от организации {$this->olympiad->institution->fullname} поступила на модерацию");
+    }
+
+     public function toDashboard($notifiable)
+    {
+        return (new DashboardMessage())
+            ->title("Олимпиада поступила на модерацию")
+            ->message("Олимпиада {$this->olympiad->title} от организации {$this->olympiad->institution->fullname} поступила на модерацию");
     }
 
     /**
@@ -49,17 +54,10 @@ class NewInstitution extends Notification implements ShouldQueue
      *
      * @return array<string, mixed>
      */
-    public function toDashboard($notifiable)
-    {
-        return (new DashboardMessage)
-            ->title('Новая заявка')
-            ->message("{$this->institution->fullname} подала заявку на регистрацию");
-    }
     public function toArray(object $notifiable): array
     {
         return [
-            'message' => 'Ваша заявка не прошла модерацию.',
-
+            //
         ];
     }
 }

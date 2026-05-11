@@ -5,7 +5,9 @@ use App\Http\Controllers\Api\Auth\RegisterController;
 use App\Http\Controllers\Api\Auth\ResetPasswordController;
 use App\Http\Controllers\Api\Auth\VerifyEmailController;
 use App\Http\Controllers\Api\InstitutionController;
+use App\Http\Controllers\Api\OlympiadController;
 use App\Http\Controllers\Api\ProfileController;
+use App\Http\Controllers\Api\QuestionController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -57,7 +59,28 @@ Route::prefix('v1')->group(function() {
         Route::put('{id}/members/{userId}', [InstitutionController::class, 'updateMember']);
         Route::get('{id}/dashboard', [InstitutionController::class, 'index']);
 
+        // олимпиады
+        Route::post('{id}/olympiads', [OlympiadController::class, 'store']);
+        Route::get('{id}/olympiads', [OlympiadController::class, 'getInstitutionOlympiads']);
 
-        // Route::post('{id}/olympiads')
+        // вопросы
+        Route::get('{id}/questions', [QuestionController::class, 'getInstitutionQuestions']);
+        Route::post('{id}/questions', [QuestionController::class, 'store']);
     });
+    Route::prefix('olympiads')->group(function() {
+        Route::get('{id}', [OlympiadController::class, 'show']);
+        Route::put('{id}', [OlympiadController::class, 'update']);
+        Route::put('{id}/schedule', [OlympiadController::class, 'updateSchedule']);
+
+        Route::post('{id}/submit-for-moderation', [OlympiadController::class, 'submitForModeration']);
+
+        Route::post('{id}/questions', [QuestionController::class, 'addQuestionToOlympiad']);
+        Route::delete('{id}/questions/{questionId}', [QuestionController::class, 'destroy']);
+        Route::put('{id}/questions/{questionId}', [QuestionController::class, 'update']);
+    });
+
+    Route::prefix('questions')->group(function() {
+
+    });
+
 });

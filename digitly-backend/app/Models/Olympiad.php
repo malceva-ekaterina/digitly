@@ -3,9 +3,12 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Orchid\Screen\AsSource;
 
 class Olympiad extends Model
 {
+    use AsSource;
+
     protected $fillable = [
         'institution_id',
         'created_by',
@@ -27,6 +30,8 @@ class Olympiad extends Model
         'moderated_by',
         'moderated_at',
         'first_purchase_at',
+        'subject_id',
+        'age_group_id',
     ];
     protected $casts = [
         'created_at' => 'datetime',
@@ -63,14 +68,33 @@ class Olympiad extends Model
         return $this->hasMany(OlympiadModerationLog::class);
     }
 
+    public function moderationLogsReject()
+    {
+        return $this->moderationLogs()->where('action', 'reject')->latest()->first();
+    }
+
     public function questions()
     {
-        return $this->hasMany(OlympiadQuestion::class);
+        return $this->belongsToMany(Question::class, 'olympiad_questions');
     }
+
+    public function HasQuestion($questionId)
+    {
+        return $this->questions()->where('question_id', $questionId)->exists();
+    }
+
 
     public function scoreBrackets()
     {
         return $this->hasMany(OlympiadScoreBracket::class);
     }
 
+    public function subject()
+    {
+        return $this->belongsTo(Subject::class);
+    }
+    public function ageGroup()
+    {
+        return $this->belongsTo(AgeGroup::class);
+    }
 }

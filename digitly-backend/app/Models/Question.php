@@ -3,19 +3,23 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Orchid\Screen\AsSource;
 
 class Question extends Model
 {
+    use AsSource;
     protected $fillable = [
         'institution_id',
         'created_by',
         'prompt',
         'type',
+        'metadata',
         'weight',
         'random_options',
     ];
 
     protected $casts = [
+        'metadata' => 'array',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
     ];
@@ -36,6 +40,6 @@ class Question extends Model
 
     public function olympiads()
     {
-        return $this->hasMany(OlympiadQuestion::class);
+        return $this->belongsToMany(Olympiad::class, 'olympiad_questions');
     }
 }

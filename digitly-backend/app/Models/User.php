@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -88,6 +89,21 @@ class User extends Authenticatable
         'updated_at',
         'created_at',
     ];
+
+    public function scopeAdmins(Builder $query): Builder
+    {
+        return $query->whereHas('roles', function($query) {
+            $query->where('slug', 'admin');
+        });
+    }
+
+    public function scopeInstitutionAdmins(Builder $query): Builder
+    {
+        return $query->whereHas('roles', function($query) {
+            $query->where('slug', 'institution_admin');
+        });
+    }
+
     // связи
     public function address() {
         return $this->belongsTo(AdrAddress::class, 'adr_address_id');

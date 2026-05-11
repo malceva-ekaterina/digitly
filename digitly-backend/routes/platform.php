@@ -14,6 +14,8 @@ use App\Orchid\Screens\Examples\ExampleLayoutsScreen;
 use App\Orchid\Screens\Examples\ExampleScreen;
 use App\Orchid\Screens\Examples\ExampleTextEditorsScreen;
 use App\Orchid\Screens\InstitutionModerationScreen;
+use App\Orchid\Screens\OlympiadModerationDetailScreen;
+use App\Orchid\Screens\OlympiadModerationScreen;
 use App\Orchid\Screens\PlatformScreen;
 use App\Orchid\Screens\Role\RoleEditScreen;
 use App\Orchid\Screens\Role\RoleListScreen;
@@ -106,5 +108,9 @@ Route::screen('example', ExampleScreen::class)
 
 // Route::screen('idea', Idea::class, 'platform.screens.idea');
 Route::screen('institution', InstitutionModerationScreen::class)->name('platform.institution');
-Route::post('institution/{id}/approve', [InstitutionController::class, 'approve'])->name('platform.institution.approve');
-Route::post('institution/{id}/reject', [InstitutionController::class, 'reject'])->name('platform.institution.reject');
+// Route::post('institution/{id}/approve', [InstitutionController::class, 'approve'])->name('platform.institution.approve');
+// Route::post('institution/{id}/reject', [InstitutionController::class, 'reject'])->name('platform.institution.reject');
+
+Route::screen('olympiads', OlympiadModerationScreen::class)->name('platform.olympiads');
+Route::screen('olympiads/{olympiad}', OlympiadModerationDetailScreen::class)
+    ->name('platform.olympiads.detail');
