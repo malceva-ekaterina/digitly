@@ -1,7 +1,7 @@
 "use client";
+import { useState, useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
 import Link from 'next/link';
-import { useState, useEffect, useRef } from 'react';
-import { useRouter } from 'next/navigation';
 
 //  МАССИВЫ С ДАННЫМИ 
 // Массив отзывов
@@ -87,7 +87,7 @@ const allColleges = [
   }
 ];
 
-// КОМПОНЕНТ КАРТОЧКИ КОЛЛЕДЖА 
+// ========== КОМПОНЕНТ КАРТОЧКИ КОЛЛЕДЖА ==========
 function CollegeCard({ college, isActive = false }) {
   const shortName = college.name.length > 45 
     ? college.name.substring(0, 45) + "..." 
@@ -490,12 +490,12 @@ export default function PasswordRecoveryEmail() {
         <img 
           src="chifra/reviews1.png" 
           alt=""
-          className="absolute bottom-0 left-0 z-0 pointer-events-none w-24 sm:w-auto opacity-50 sm:opacity-100"
+          className="absolute bottom-0 left-0 z-0 pointer-events-none w-24 sm:w-auto opacity-0 sm:opacity-100"
         />
         <img 
           src="chifra/reviews2.png" 
           alt=""
-          className="absolute bottom-0 right-0 z-0 pointer-events-none w-24 sm:w-auto opacity-50 sm:opacity-100"
+          className="absolute bottom-0 right-0 z-0 pointer-events-none w-24 sm:w-auto opacity-0 sm:opacity-100"
         />
 
         <div className="relative z-10 flex justify-between items-center px-2 sm:px-4 md:px-8 py-2 sm:py-4">
@@ -635,7 +635,7 @@ export default function PasswordRecoveryEmail() {
           </div>
         </div>
 
-        <img src="chifra/lower_wave.png" alt="Волна" className="w-full absolute bottom-0 left-0 z-0 pointer-events-none opacity-30 sm:opacity-100" />
+        <img src="chifra/lower_wave.png" alt="Волна" className="w-full absolute bottom-0 left-0 z-0 pointer-events-none opacity-100" />
       </div>
 
       {/*  ШЕСТОЙ БЛОК (ДОКУМЕНТЫ) */}

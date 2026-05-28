@@ -4,7 +4,13 @@ import { useRouter } from "next/navigation";
 import Link from 'next/link';
 import { z } from "zod";
 
-//  КОМПОНЕНТ КНОПКИ ПРОФИЛЯ 
+// ========== ТЕСТОВЫЙ РЕЖИМ ==========
+const isTestMode = typeof window !== 'undefined' && (
+  window.location.search.includes('test=true') || 
+  window.location.search.includes('mock=true')
+);
+
+// ========== КОМПОНЕНТ КНОПКИ ПРОФИЛЯ ==========
 function ProfileButton() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [userName, setUserName] = useState('');
@@ -17,9 +23,7 @@ function ProfileButton() {
     const checkAuth = () => {
       const token = localStorage.getItem('token');
       const user = localStorage.getItem('user');
-      
       setIsAuthenticated(!!token);
-      
       if (user) {
         try {
           const userData = JSON.parse(user);
@@ -29,7 +33,6 @@ function ProfileButton() {
         }
       }
     };
-    
     checkAuth();
     window.addEventListener('storage', checkAuth);
     return () => window.removeEventListener('storage', checkAuth);
@@ -47,12 +50,7 @@ function ProfileButton() {
   }, []);
 
   const toggleMenu = () => setIsOpen(!isOpen);
-
-  const handleNavigation = (path) => {
-    setIsOpen(false);
-    router.push(path);
-  };
-
+  const handleNavigation = (path) => { setIsOpen(false); router.push(path); };
   const handleLogout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
@@ -79,7 +77,6 @@ function ProfileButton() {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
           </svg>
         </button>
-
         {isOpen && (
           <div ref={menuRef} className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg overflow-hidden z-50">
             <button onClick={() => handleNavigation('/profile')} className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
@@ -130,7 +127,7 @@ function ProfileButton() {
   );
 }
 
-//  КОМПОНЕНТ ВЕРХНЕЙ ПАНЕЛИ 
+// ========== КОМПОНЕНТ ВЕРХНЕЙ ПАНЕЛИ ==========
 function Header() {
   return (
     <div className="w-full h-[278px] relative" style={{ background: 'linear-gradient(135deg, #312C85, #8E51FF)'}}>
@@ -140,7 +137,6 @@ function Header() {
             <img src="/chifra/logo_chifra.png" alt="Цифра" className="hidden sm:block w-12 sm:w-16 md:w-20 lg:w-24 h-auto cursor-pointer" />
           </Link>
         </div>
-        {/* Кнопки навигации справа */}
         <div className="flex items-center gap-1.5 sm:gap-2 md:gap-3 lg:gap-4">
           <Link href="/olympiads" className="bg-white rounded-xl flex items-center justify-center gap-0.5 sm:gap-1 md:gap-1.5 font-sans font-medium shadow-sm whitespace-nowrap text-[13px] sm:text-sm md:text-base lg:text-[15px] px-3 sm:px-4 md:px-4 lg:px-5 py-1.5 sm:py-1.5 md:py-2 lg:py-1.5 hover:bg-gray-50 transition-colors">
             <span>Олимпиады</span>
@@ -150,7 +146,6 @@ function Header() {
             <span>Методочки</span>
             <img src="/chifra/arrow.png" alt="стрелка" className="w-3 h-3 sm:w-3.5 sm:h-3.5 md:w-4 md:h-4 lg:w-4 lg:h-4" />
           </Link>
-          {/* Кнопка профиля (вход/личный кабинет) */}
           <ProfileButton />
         </div>
       </div>
@@ -161,7 +156,7 @@ function Header() {
   );
 }
 
-// Схема валидации для профиля (личные данные)
+// ========== СХЕМЫ ВАЛИДАЦИИ ==========
 const profileValidationSchema = z.object({
   fullname: z.string()
     .min(2, 'ФИО должно содержать минимум 2 символа')
@@ -179,7 +174,6 @@ const profileValidationSchema = z.object({
     .optional()
 });
 
-// Схема валидации для параметров входа
 const loginValidationSchema = z.object({
   phone_number: z.string()
     .min(11, 'Номер телефона должен содержать минимум 11 цифр')
@@ -199,8 +193,7 @@ const loginValidationSchema = z.object({
     })
 });
 
-
-
+// ========== ОСНОВНОЙ КОМПОНЕНТ ==========
 export default function Profile() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState("personal");
@@ -236,8 +229,7 @@ export default function Profile() {
   useEffect(() => {
     const token = localStorage.getItem('token');
     setIsAuthenticated(!!token);
-    
-    if (!token) {
+    if (!token && !isTestMode) {
       router.push('/login');
     }
   }, [router]);
@@ -257,18 +249,48 @@ export default function Profile() {
     }
   };
 
+  // Загрузка данных (реальный API или мок)
   useEffect(() => {
     const fetchProfile = async () => {
       try {
         const token = localStorage.getItem('token');
-        if (!token) return;
         
+        if (isTestMode) {
+          // Мок-данные из localStorage или дефолтные
+          const savedProfile = localStorage.getItem('mock_profile');
+          if (savedProfile) {
+            const data = JSON.parse(savedProfile);
+            setProfileData(data);
+            setEditForm({
+              fullname: data.fullname || '',
+              birth_date: data.birth_date?.split('T')[0] || '',
+              study_place: data.study_place || '',
+              study_grade: data.study_grade || '',
+              phone_number: data.phone_number || '+7 999 123-45-67',
+              email: data.email || 'user@example.com',
+              password: ''
+            });
+          } else {
+            const defaultData = {
+              fullname: 'Тестовый Пользователь',
+              birth_date: '1990-01-01',
+              study_place: 'Тестовый колледж',
+              study_grade: '3 курс',
+              phone_number: '+7 999 123-45-67',
+              email: 'user@example.com'
+            };
+            setProfileData(defaultData);
+            setEditForm({ ...defaultData, password: '' });
+          }
+          setLoading(false);
+          return;
+        }
+        
+        if (!token) return;
         const response = await fetch('/api/v1/profile', {
           headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
         });
-        
         if (!response.ok) throw new Error('Ошибка загрузки профиля');
-        
         const data = await response.json();
         setProfileData(data);
         setEditForm({
@@ -287,15 +309,15 @@ export default function Profile() {
       }
     };
 
-    fetchProfile();
-  }, []);
-
-  useEffect(() => {
     const fetchCards = async () => {
+      if (isTestMode) {
+        const savedCards = localStorage.getItem('mock_cards');
+        if (savedCards) setCards(JSON.parse(savedCards));
+        return;
+      }
       try {
         const token = localStorage.getItem('token');
         if (!token) return;
-        
         const response = await fetch('/api/v1/profile/cards', {
           headers: { 'Authorization': `Bearer ${token}` }
         });
@@ -307,15 +329,16 @@ export default function Profile() {
         console.error('Ошибка загрузки карт:', err);
       }
     };
-    fetchCards();
-  }, []);
 
-  useEffect(() => {
     const fetchPayments = async () => {
+      if (isTestMode) {
+        const savedPayments = localStorage.getItem('mock_payments');
+        if (savedPayments) setPayments(JSON.parse(savedPayments));
+        return;
+      }
       try {
         const token = localStorage.getItem('token');
         if (!token) return;
-        
         const response = await fetch('/api/v1/profile/payments', {
           headers: { 'Authorization': `Bearer ${token}` }
         });
@@ -327,15 +350,16 @@ export default function Profile() {
         console.error('Ошибка загрузки платежей:', err);
       }
     };
-    fetchPayments();
-  }, []);
 
-  useEffect(() => {
     const fetchResults = async () => {
+      if (isTestMode) {
+        const savedResults = localStorage.getItem('mock_results');
+        if (savedResults) setResults(JSON.parse(savedResults));
+        return;
+      }
       try {
         const token = localStorage.getItem('token');
         if (!token) return;
-        
         const response = await fetch('/api/v1/profile/results', {
           headers: { 'Authorization': `Bearer ${token}` }
         });
@@ -347,6 +371,10 @@ export default function Profile() {
         console.error('Ошибка загрузки результатов:', err);
       }
     };
+
+    fetchProfile();
+    fetchCards();
+    fetchPayments();
     fetchResults();
   }, []);
 
@@ -359,6 +387,24 @@ export default function Profile() {
     
     setSaving(true);
     try {
+      if (isTestMode) {
+        // Сохраняем в localStorage
+        const updatedProfile = {
+          fullname: editForm.fullname,
+          birth_date: editForm.birth_date,
+          study_place: editForm.study_place,
+          study_grade: editForm.study_grade,
+          phone_number: editForm.phone_number,
+          email: editForm.email
+        };
+        localStorage.setItem('mock_profile', JSON.stringify(updatedProfile));
+        setProfileData(updatedProfile);
+        setEditMode(false);
+        showToast('Данные успешно сохранены (тестовый режим)', 'success');
+        setSaving(false);
+        return;
+      }
+      
       const token = localStorage.getItem('token');
       const response = await fetch('/api/v1/profile', {
         method: 'PUT',
@@ -372,10 +418,7 @@ export default function Profile() {
       });
       
       const data = await response.json();
-      
-      if (!response.ok) {
-        throw new Error(data.message || 'Ошибка сохранения');
-      }
+      if (!response.ok) throw new Error(data.message || 'Ошибка сохранения');
       
       setProfileData(data);
       setEditMode(false);
@@ -401,13 +444,6 @@ export default function Profile() {
     setProfileErrors({});
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    router.push('/login');
-    showToast('Вы вышли из системы', 'success');
-  };
-
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -430,40 +466,40 @@ export default function Profile() {
 
       <div className="flex flex-col md:flex-row gap-8 p-8">
         
-      <nav className='rounded-xl w-full md:w-[280px] bg-white p-4 shadow-[0px_0px_25px_10px_rgba(0,0,0,0.1)] h-fit'>
-        <button 
-          onClick={() => setActiveTab("personal")}
-          className={`w-full text-left p-3 rounded-xl font-sans transition-all ${
-            activeTab === "personal" ? "bg-[#FFE4E6]" : "hover:bg-gray-100"
-          }`}
-        >
-          Персональные данные
-        </button>
-        <button 
-          onClick={() => setActiveTab("payments")}
-          className={`w-full text-left p-3 rounded-xl font-sans transition-all mt-2 ${
-            activeTab === "payments" ? "bg-[#FFE4E6]" : "hover:bg-gray-100"
-          }`}
-        >
-          Платежи
-        </button>
-        <button 
-          onClick={() => setActiveTab("results")}
-          className={`w-full text-left p-3 rounded-xl font-sans transition-all mt-2 ${
-            activeTab === "results" ? "bg-[#FFE4E6]" : "hover:bg-gray-100"
-          }`}
-        >
-          Результаты
-        </button>
-        <button 
-          onClick={() => router.push('/profile/institutions')}
-          className="w-full text-left p-3 rounded-xl font-sans transition-all mt-2 hover:bg-gray-100"
-        >
-          <div className="flex items-center gap-2">
-            Мои организации
-          </div>
-        </button>
-      </nav>
+        <nav className='rounded-xl w-full md:w-[280px] bg-white p-4 shadow-[0px_0px_25px_10px_rgba(0,0,0,0.1)] h-fit'>
+          <button 
+            onClick={() => setActiveTab("personal")}
+            className={`w-full text-left p-3 rounded-xl font-sans transition-all ${
+              activeTab === "personal" ? "bg-[#FFE4E6]" : "hover:bg-gray-100"
+            }`}
+          >
+            Персональные данные
+          </button>
+          <button 
+            onClick={() => setActiveTab("payments")}
+            className={`w-full text-left p-3 rounded-xl font-sans transition-all mt-2 ${
+              activeTab === "payments" ? "bg-[#FFE4E6]" : "hover:bg-gray-100"
+            }`}
+          >
+            Платежи
+          </button>
+          <button 
+            onClick={() => setActiveTab("results")}
+            className={`w-full text-left p-3 rounded-xl font-sans transition-all mt-2 ${
+              activeTab === "results" ? "bg-[#FFE4E6]" : "hover:bg-gray-100"
+            }`}
+          >
+            Результаты
+          </button>
+          <button 
+            onClick={() => router.push('/profile/institutions')}
+            className="w-full text-left p-3 rounded-xl font-sans transition-all mt-2 hover:bg-gray-100"
+          >
+            <div className="flex items-center gap-2">
+              Мои организации
+            </div>
+          </button>
+        </nav>
 
         <div className="flex-1">
           {activeTab === "personal" && (
@@ -500,7 +536,7 @@ export default function Profile() {
   );
 }
 
-// Компонент загрузки аватара
+// ========== КОМПОНЕНТ ЗАГРУЗКИ АВАТАРА ==========
 function AvatarUpload({ avatarUrl, onAvatarChange, onAvatarDelete }) {
   const [dragActive, setDragActive] = useState(false);
   const [preview, setPreview] = useState(avatarUrl || null);
@@ -519,7 +555,6 @@ function AvatarUpload({ avatarUrl, onAvatarChange, onAvatarDelete }) {
     e.preventDefault();
     e.stopPropagation();
     setDragActive(false);
-    
     const file = e.dataTransfer.files[0];
     if (file && file.type.startsWith("image/")) {
       handleFile(file);
@@ -528,9 +563,7 @@ function AvatarUpload({ avatarUrl, onAvatarChange, onAvatarDelete }) {
 
   const handleFileChange = (e) => {
     const file = e.target.files[0];
-    if (file) {
-      handleFile(file);
-    }
+    if (file) handleFile(file);
   };
 
   const handleFile = (file) => {
@@ -538,7 +571,6 @@ function AvatarUpload({ avatarUrl, onAvatarChange, onAvatarDelete }) {
       alert("Файл слишком большой. Максимум 5MB");
       return;
     }
-    
     const reader = new FileReader();
     reader.onloadend = () => {
       setPreview(reader.result);
@@ -575,7 +607,6 @@ function AvatarUpload({ avatarUrl, onAvatarChange, onAvatarDelete }) {
           </div>
         )}
       </div>
-      
       <div className="flex gap-2 mt-3">
         <label className="cursor-pointer bg-gray-200 hover:bg-gray-300 text-gray-700 px-3 py-1.5 rounded-lg text-sm transition-colors">
           Выбрать файл
@@ -595,10 +626,8 @@ function AvatarUpload({ avatarUrl, onAvatarChange, onAvatarDelete }) {
   );
 }
 
-// СТРАНИЦА "ПЕРСОНАЛЬНЫЕ ДАННЫЕ"
+// ========== СТРАНИЦА "ПЕРСОНАЛЬНЫЕ ДАННЫЕ" ==========
 function PersonalDataTab({ profileData, editMode, setEditMode, editForm, setEditForm, onSave, onCancelEdit, saving, cards, setCards, profileErrors, setProfileErrors }) {
-  const [showCardForm, setShowCardForm] = useState(false);
-  const [newCard, setNewCard] = useState({ number: "", bank: "" });
   const [avatarPreview, setAvatarPreview] = useState(profileData?.avatar_url || null);
   
   const [editLoginMode, setEditLoginMode] = useState(false);
@@ -608,7 +637,6 @@ function PersonalDataTab({ profileData, editMode, setEditMode, editForm, setEdit
     password: ""
   });
   const [loginErrors, setLoginErrors] = useState({});
-  
   const [fullnameError, setFullnameError] = useState('');
 
   const validateFullname = (value) => {
@@ -634,25 +662,7 @@ function PersonalDataTab({ profileData, editMode, setEditMode, editForm, setEdit
 
   const validateLoginForm = () => {
     try {
-      const schema = z.object({
-        phone_number: z.string()
-          .min(11, 'Номер телефона должен содержать минимум 11 цифр')
-          .max(15, 'Номер телефона слишком длинный')
-          .regex(/^[\d+\-\s]+$/, 'Телефон может содержать только цифры, + и -'),
-        email: z.string()
-          .email('Введите корректный email (пример: user@example.com)')
-          .min(5, 'Email слишком короткий')
-          .max(255, 'Email слишком длинный'),
-        password: z.string()
-          .optional()
-          .refine((val) => !val || val.length >= 8, {
-            message: 'Пароль должен быть минимум 8 символов'
-          })
-          .refine((val) => !val || /^(?=.*[A-Za-z])(?=.*\d)/.test(val), {
-            message: 'Пароль должен содержать хотя бы одну букву и одну цифру'
-          })
-      });
-      schema.parse(loginForm);
+      loginValidationSchema.parse(loginForm);
       setLoginErrors({});
       return true;
     } catch (error) {
@@ -669,24 +679,18 @@ function PersonalDataTab({ profileData, editMode, setEditMode, editForm, setEdit
     const value = e.target.value;
     setEditForm({ ...editForm, fullname: value });
     validateFullname(value);
-    if (profileErrors.fullname) {
-      setProfileErrors({ ...profileErrors, fullname: "" });
-    }
+    if (profileErrors.fullname) setProfileErrors({ ...profileErrors, fullname: "" });
   };
 
   const handleChange = (e) => {
     setEditForm({ ...editForm, [e.target.name]: e.target.value });
-    if (profileErrors[e.target.name]) {
-      setProfileErrors({ ...profileErrors, [e.target.name]: "" });
-    }
+    if (profileErrors[e.target.name]) setProfileErrors({ ...profileErrors, [e.target.name]: "" });
   };
 
   const handleLoginChange = (e) => {
     const { name, value } = e.target;
     setLoginForm({ ...loginForm, [name]: value });
-    if (loginErrors[name]) {
-      setLoginErrors({ ...loginErrors, [name]: "" });
-    }
+    if (loginErrors[name]) setLoginErrors({ ...loginErrors, [name]: "" });
   };
 
   const handleSaveLogin = () => {
@@ -695,25 +699,36 @@ function PersonalDataTab({ profileData, editMode, setEditMode, editForm, setEdit
       alert(`Ошибки валидации: ${errorMessages}`);
       return;
     }
-    
     setEditForm({ 
       ...editForm, 
       phone_number: loginForm.phone_number,
       email: loginForm.email
     });
-    
     if (loginForm.password) {
       alert("Пароль изменён");
+      if (isTestMode) {
+        const user = JSON.parse(localStorage.getItem('user') || '{}');
+        user.password = loginForm.password;
+        localStorage.setItem('user', JSON.stringify(user));
+      }
     }
-    
     setEditLoginMode(false);
     setLoginErrors({});
   };
 
   const handleAvatarChange = async (file) => {
+    if (isTestMode) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        localStorage.setItem('mock_avatar', reader.result);
+        setAvatarPreview(reader.result);
+        alert("Аватар обновлён (тестовый режим)");
+      };
+      reader.readAsDataURL(file);
+      return;
+    }
     const formData = new FormData();
     formData.append("avatar", file);
-    
     try {
       const token = localStorage.getItem('token');
       const response = await fetch('/api/v1/profile/avatar', {
@@ -721,60 +736,43 @@ function PersonalDataTab({ profileData, editMode, setEditMode, editForm, setEdit
         headers: { 'Authorization': `Bearer ${token}` },
         body: formData
       });
-      
       if (response.ok) {
         const data = await response.json();
         setAvatarPreview(data.avatar_url);
         alert("Аватар обновлён");
-      } else {
-        alert("Ошибка загрузки аватара");
-      }
+      } else alert("Ошибка загрузки аватара");
     } catch (error) {
       alert("Ошибка соединения");
     }
   };
 
   const handleAvatarDelete = async () => {
+    if (isTestMode) {
+      localStorage.removeItem('mock_avatar');
+      setAvatarPreview(null);
+      alert("Аватар удалён (тестовый режим)");
+      return;
+    }
     try {
       const token = localStorage.getItem('token');
       const response = await fetch('/api/v1/profile/avatar', {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       });
-      
       if (response.ok) {
         setAvatarPreview(null);
         alert("Аватар удалён");
-      } else {
-        alert("Ошибка удаления");
-      }
+      } else alert("Ошибка удаления");
     } catch (error) {
       alert("Ошибка соединения");
     }
   };
 
-  const handleAddCard = () => {
-    if (!newCard.number.trim()) {
-      alert("Введите номер карты");
-      return;
-    }
-    if (!newCard.bank.trim()) {
-      alert("Введите название банка");
-      return;
-    }
-    if (newCard.number.replace(/\s/g, '').length !== 16) {
-      alert("Номер карты должен содержать 16 цифр");
-      return;
-    }
-    setCards([...cards, { id: Date.now(), number: newCard.number, bank: newCard.bank }]);
-    setNewCard({ number: "", bank: "" });
-    setShowCardForm(false);
-  };
-
   const handleDeleteCard = (id) => {
-    if (confirm('Удалить эту карту?')) {
-      setCards(cards.filter(card => card.id !== id));
-    }
+    if (!confirm('Удалить эту карту?')) return;
+    const updatedCards = cards.filter(card => card.id !== id);
+    setCards(updatedCards);
+    if (isTestMode) localStorage.setItem('mock_cards', JSON.stringify(updatedCards));
   };
 
   const nameParts = editForm.fullname?.split(' ') || [];
@@ -794,24 +792,17 @@ function PersonalDataTab({ profileData, editMode, setEditMode, editForm, setEdit
 
   return (
     <div className="flex flex-col lg:flex-row gap-6">
-      
       <div className="flex-1 flex flex-col gap-6">
-        
         <div className="bg-white rounded-xl shadow-[0px_0px_25px_10px_rgba(0,0,0,0.1)] p-6">
-          
           <AvatarUpload 
             avatarUrl={avatarPreview}
             onAvatarChange={handleAvatarChange}
             onAvatarDelete={handleAvatarDelete}
           />
-          
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-lg font-bold text-gray-800">Личные данные</h2>
             {!editMode && (
-              <button 
-                onClick={() => setEditMode(true)}
-                className="text-sm text-[#8E51FF] hover:underline"
-              >
+              <button onClick={() => setEditMode(true)} className="text-sm text-[#8E51FF] hover:underline">
                 Редактировать
               </button>
             )}
@@ -875,12 +866,12 @@ function PersonalDataTab({ profileData, editMode, setEditMode, editForm, setEdit
             <div className="grid grid-cols-2 gap-x-4 gap-y-3">
               <p className="text-xs text-gray-400">Имя</p>
               <p className="text-sm font-medium">{firstName}</p>
-              <p className="text-xs text-gray-400">Дата рождения</p>
-              <p className="text-sm font-medium">{editForm.birth_date ? new Date(editForm.birth_date).toLocaleDateString('ru-RU') : 'Не указано'}</p>
-              <p className="text-xs text-gray-400">Фамилия</p>
-              <p className="text-sm font-medium">{lastName}</p>
               <p className="text-xs text-gray-400">Отчество</p>
               <p className="text-sm font-medium">{middleName}</p>
+              <p className="text-xs text-gray-400">Фамилия</p>
+              <p className="text-sm font-medium">{lastName}</p>
+              <p className="text-xs text-gray-400">Дата рождения</p>
+              <p className="text-sm font-medium">{editForm.birth_date ? new Date(editForm.birth_date).toLocaleDateString('ru-RU') : 'Не указано'}</p>
               <p className="text-xs text-gray-400">Возраст</p>
               <p className="text-sm font-medium">{calculateAge(editForm.birth_date)}</p>
               <p className="text-xs text-gray-400">Место учёбы/работы</p>
@@ -895,18 +886,15 @@ function PersonalDataTab({ profileData, editMode, setEditMode, editForm, setEdit
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-lg font-bold text-gray-800">Параметры для входа</h2>
             {!editLoginMode && (
-              <button 
-                onClick={() => {
-                  setLoginForm({
-                    phone_number: editForm.phone_number,
-                    email: editForm.email,
-                    password: ""
-                  });
-                  setEditLoginMode(true);
-                  setLoginErrors({});
-                }}
-                className="text-sm text-[#8E51FF] hover:underline"
-              >
+              <button onClick={() => {
+                setLoginForm({
+                  phone_number: editForm.phone_number,
+                  email: editForm.email,
+                  password: ""
+                });
+                setEditLoginMode(true);
+                setLoginErrors({});
+              }} className="text-sm text-[#8E51FF] hover:underline">
                 Редактировать
               </button>
             )}
@@ -920,64 +908,37 @@ function PersonalDataTab({ profileData, editMode, setEditMode, editForm, setEdit
                   <span className="text-gray-400 text-xs ml-2">(минимум 11 цифр)</span>
                 </label>
                 <input 
-                  type="text" 
-                  name="phone_number" 
-                  value={loginForm.phone_number || ''} 
-                  onChange={handleLoginChange} 
+                  type="text" name="phone_number" value={loginForm.phone_number || ''} onChange={handleLoginChange} 
                   placeholder="+7 (999) 123-45-67"
-                  className={`w-full border-2 rounded-xl px-4 py-2 outline-none ${
-                    loginErrors.phone_number ? 'border-red-500' : 'border-gray-200'
-                  } focus:border-[#8E51FF]`}
+                  className={`w-full border-2 rounded-xl px-4 py-2 outline-none ${loginErrors.phone_number ? 'border-red-500' : 'border-gray-200'} focus:border-[#8E51FF]`}
                   style={{ height: '40px' }}
                 />
                 {loginErrors.phone_number && <p className="text-red-500 text-xs mt-1">{loginErrors.phone_number}</p>}
-                <p className="text-gray-400 text-xs mt-1">Пример: +7 999 123-45-67 или 89991234567</p>
               </div>
-              
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Почта <span className="text-red-500">*</span>
-                  <span className="text-gray-400 text-xs ml-2">(пример: user@example.com)</span>
                 </label>
                 <input 
-                  type="email" 
-                  name="email" 
-                  value={loginForm.email || ''} 
-                  onChange={handleLoginChange} 
+                  type="email" name="email" value={loginForm.email || ''} onChange={handleLoginChange} 
                   placeholder="your@email.com"
-                  className={`w-full border-2 rounded-xl px-4 py-2 outline-none ${
-                    loginErrors.email ? 'border-red-500' : 'border-gray-200'
-                  } focus:border-[#8E51FF]`}
+                  className={`w-full border-2 rounded-xl px-4 py-2 outline-none ${loginErrors.email ? 'border-red-500' : 'border-gray-200'} focus:border-[#8E51FF]`}
                   style={{ height: '40px' }}
                 />
                 {loginErrors.email && <p className="text-red-500 text-xs mt-1">{loginErrors.email}</p>}
               </div>
-              
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Новый пароль 
-                  <span className="text-gray-400 text-xs ml-2">(оставьте пустым, если не хотите менять)</span>
+                  Новый пароль <span className="text-gray-400 text-xs ml-2">(оставьте пустым, если не хотите менять)</span>
                 </label>
                 <input 
-                  type="password" 
-                  name="password" 
-                  value={loginForm.password} 
-                  onChange={handleLoginChange} 
+                  type="password" name="password" value={loginForm.password} onChange={handleLoginChange} 
                   placeholder="Минимум 8 символов, буквы и цифры"
-                  className={`w-full border-2 rounded-xl px-4 py-2 outline-none ${
-                    loginErrors.password ? 'border-red-500' : 'border-gray-200'
-                  } focus:border-[#8E51FF]`}
+                  className={`w-full border-2 rounded-xl px-4 py-2 outline-none ${loginErrors.password ? 'border-red-500' : 'border-gray-200'} focus:border-[#8E51FF]`}
                   style={{ height: '40px' }}
                 />
                 {loginErrors.password && <p className="text-red-500 text-xs mt-1">{loginErrors.password}</p>}
-                {!loginErrors.password && loginForm.password && loginForm.password.length > 0 && loginForm.password.length < 8 && (
-                  <p className="text-yellow-500 text-xs mt-1"> Пароль слишком короткий (нужно минимум 8 символов)</p>
-                )}
-                {!loginErrors.password && loginForm.password && loginForm.password.length >= 8 && !/(?=.*[A-Za-z])(?=.*\d)/.test(loginForm.password) && (
-                  <p className="text-yellow-500 text-xs mt-1"> Пароль должен содержать хотя бы одну букву и одну цифру</p>
-                )}
               </div>
-              
               <div className="flex gap-2 pt-2">
                 <button onClick={handleSaveLogin} className="bg-gradient-to-r from-[#312C85] to-[#8E51FF] hover:from-[#8E51FF] hover:to-[#312C85] text-white px-4 py-2 rounded-lg text-sm">
                   Сохранить
@@ -1010,11 +971,7 @@ function PersonalDataTab({ profileData, editMode, setEditMode, editForm, setEdit
                   <p className="text-sm font-medium tracking-wider">{card.number}</p>
                   <p className="text-xs text-gray-500">{card.bank}</p>
                 </div>
-                <button 
-                  onClick={() => handleDeleteCard(card.id)}
-                  className="bg-gradient-to-r from-[#312C85] to-[#8E51FF] hover:from-[#8E51FF] hover:to-[#312C85] text-white rounded-lg p-1 px-3 transition flex items-center gap-1 text-xs"
-                  title="Удалить карту"
-                >
+                <button onClick={() => handleDeleteCard(card.id)} className="bg-gradient-to-r from-[#312C85] to-[#8E51FF] hover:from-[#8E51FF] hover:to-[#312C85] text-white rounded-lg p-1 px-3 transition flex items-center gap-1 text-xs">
                   <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                   </svg>
@@ -1022,84 +979,48 @@ function PersonalDataTab({ profileData, editMode, setEditMode, editForm, setEdit
                 </button>
               </div>
             ))}
-            
-            {!showCardForm && (
-              <Link 
-                href="/profile/bankcard"
-                className="w-full border-2 border-dashed border-gray-300 rounded-xl p-3 text-gray-500 hover:border-[#8E51FF] hover:text-[#8E51FF] transition-colors text-sm text-center block"
-              >
-                + Привязать карту
-              </Link>
-            )}
+            <Link 
+              href="/profile/bankcard"
+              className="w-full border-2 border-dashed border-gray-300 rounded-xl p-3 text-gray-500 hover:border-[#8E51FF] hover:text-[#8E51FF] transition-colors text-sm text-center block"
+            >
+              + Привязать карту
+            </Link>
           </div>
         </div>
       </div>
-
     </div>
   );
 }
 
-// СТРАНИЦА "ПЛАТЕЖИ"
+// ========== СТРАНИЦА "ПЛАТЕЖИ" ==========
 function PaymentsTab({ cards, setCards, payments }) {
-  const [showCardForm, setShowCardForm] = useState(false);
-  const [newCard, setNewCard] = useState({ number: "", bank: "" });
-
-  const handleAddCard = () => {
-    if (!newCard.number.trim()) {
-      alert("Введите номер карты");
-      return;
-    }
-    if (!newCard.bank.trim()) {
-      alert("Введите название банка");
-      return;
-    }
-    if (newCard.number.replace(/\s/g, '').length !== 16) {
-      alert("Номер карты должен содержать 16 цифр");
-      return;
-    }
-    setCards([...cards, { id: Date.now(), number: newCard.number, bank: newCard.bank }]);
-    setNewCard({ number: "", bank: "" });
-    setShowCardForm(false);
-  };
-
   const handleDeleteCard = (id) => {
-    if (confirm('Удалить эту карту?')) {
-      setCards(cards.filter(card => card.id !== id));
-    }
+    if (!confirm('Удалить эту карту?')) return;
+    const updatedCards = cards.filter(card => card.id !== id);
+    setCards(updatedCards);
+    if (isTestMode) localStorage.setItem('mock_cards', JSON.stringify(updatedCards));
   };
 
   const getStatusClass = (status) => {
     switch (status?.toLowerCase()) {
-      case 'оплачено':
-      case 'paid':
-        return 'text-green-600 bg-green-50';
-      case 'ошибка при оплате':
-      case 'failed':
-        return 'text-red-600 bg-red-50';
-      case 'в обработке':
-      case 'pending':
-        return 'text-yellow-600 bg-yellow-50';
-      default:
-        return 'text-gray-600 bg-gray-50';
+      case 'оплачено': case 'paid': return 'text-green-600 bg-green-50';
+      case 'ошибка при оплате': case 'failed': return 'text-red-600 bg-red-50';
+      case 'в обработке': case 'pending': return 'text-yellow-600 bg-yellow-50';
+      default: return 'text-gray-600 bg-gray-50';
     }
   };
 
   const getStatusText = (status) => {
     switch (status?.toLowerCase()) {
-      case 'paid':
-        return 'Оплачено';
-      case 'failed':
-        return 'Ошибка при оплате';
-      case 'pending':
-        return 'В обработке';
-      default:
-        return status || '—';
+      case 'paid': return 'Оплачено';
+      case 'failed': return 'Ошибка при оплате';
+      case 'pending': return 'В обработке';
+      default: return status || '—';
     }
   };
 
   return (
     <div className="flex flex-col xl:flex-row gap-6">
-      
       <div className="w-full xl:w-[400px]">
         <div className="bg-white rounded-xl shadow-[0px_0px_25px_10px_rgba(0,0,0,0.1)] p-4 sm:p-6">
           <h2 className="text-base sm:text-lg font-bold text-gray-800 mb-4">Банковские карты</h2>
@@ -1113,11 +1034,7 @@ function PaymentsTab({ cards, setCards, payments }) {
                     <p className="text-sm sm:text-base font-medium tracking-wider break-words">{card.number}</p>
                     <p className="text-xs text-gray-500">{card.bank}</p>
                   </div>
-                  <button 
-                    onClick={() => handleDeleteCard(card.id)}
-                    className="bg-gradient-to-r from-[#312C85] to-[#8E51FF] hover:from-[#8E51FF] hover:to-[#312C85] text-white rounded-lg p-1 px-3 transition flex items-center gap-1 text-xs"
-                    title="Удалить карту"
-                  >
+                  <button onClick={() => handleDeleteCard(card.id)} className="bg-gradient-to-r from-[#312C85] to-[#8E51FF] hover:from-[#8E51FF] hover:to-[#312C85] text-white rounded-lg p-1 px-3 transition flex items-center gap-1 text-xs">
                     <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                     </svg>
@@ -1126,57 +1043,18 @@ function PaymentsTab({ cards, setCards, payments }) {
                 </div>
               ))
             )}
-            
-            {!showCardForm && (
-              <button 
-                onClick={() => setShowCardForm(true)}
-                className="w-full border-2 border-dashed border-gray-300 rounded-xl p-3 text-gray-500 hover:border-[#8E51FF] hover:text-[#8E51FF] transition-colors text-sm"
-              >
-                + Привязать карту
-              </button>
-            )}
-
-            {showCardForm && (
-              <div className="border rounded-xl p-4 space-y-3 bg-gray-50">
-                <input 
-                  type="text" 
-                  placeholder="Номер карты (16 цифр)"
-                  value={newCard.number}
-                  onChange={(e) => setNewCard({ ...newCard, number: e.target.value })}
-                  className="w-full border rounded-lg p-2 text-sm"
-                  maxLength="19"
-                />
-                <input 
-                  type="text" 
-                  placeholder="Банк (МИР, Visa, Mastercard)"
-                  value={newCard.bank}
-                  onChange={(e) => setNewCard({ ...newCard, bank: e.target.value })}
-                  className="w-full border rounded-lg p-2 text-sm"
-                />
-                <div className="flex gap-2">
-                  <button 
-                    onClick={handleAddCard}
-                    className="bg-gradient-to-r from-[#312C85] to-[#8E51FF] hover:from-[#8E51FF] hover:to-[#312C85] text-white px-4 py-2 rounded-lg text-sm flex-1"
-                  >
-                    Добавить
-                  </button>
-                  <button 
-                    onClick={() => setShowCardForm(false)}
-                    className="border border-gray-300 px-4 py-2 rounded-lg hover:bg-gray-100 text-sm"
-                  >
-                    Отмена
-                  </button>
-                </div>
-              </div>
-            )}
+            <Link 
+              href="/profile/bankcard"
+              className="w-full border-2 border-dashed border-gray-300 rounded-xl p-3 text-gray-500 hover:border-[#8E51FF] hover:text-[#8E51FF] transition-colors text-sm text-center block"
+            >
+              + Привязать карту
+            </Link>
           </div>
         </div>
       </div>
-
       <div className="flex-1">
         <div className="bg-white rounded-xl shadow-[0px_0px_25px_10px_rgba(0,0,0,0.1)] p-4 sm:p-6">
           <h2 className="text-base sm:text-lg font-bold text-gray-800 mb-4">История платежей</h2>
-          
           {payments.length === 0 ? (
             <p className="text-gray-500 text-center py-8">У вас пока нет платежей</p>
           ) : (
@@ -1184,24 +1062,13 @@ function PaymentsTab({ cards, setCards, payments }) {
               {payments.map((payment, idx) => (
                 <div key={idx} className="border rounded-lg p-4">
                   <div className="flex flex-wrap justify-between items-start gap-2 mb-2">
-                    <div>
-                      <span className="text-gray-500 text-xs">Номер</span>
-                      <p className="font-medium text-sm sm:text-base">{payment.id || payment.order_id || '—'}</p>
-                    </div>
-                    <div className="text-right">
-                      <span className="text-gray-500 text-xs">Сумма</span>
-                      <p className="font-medium text-sm sm:text-base">{payment.amount} ₽</p>
-                    </div>
+                    <div><span className="text-gray-500 text-xs">Номер</span><p className="font-medium text-sm sm:text-base">{payment.id || payment.order_id || '—'}</p></div>
+                    <div className="text-right"><span className="text-gray-500 text-xs">Сумма</span><p className="font-medium text-sm sm:text-base">{payment.amount} ₽</p></div>
                   </div>
-                  <div className="mb-2">
-                    <span className="text-gray-500 text-xs">Купленные элементы</span>
-                    <p className="font-medium text-sm sm:text-base break-words">{payment.item || payment.description || '—'}</p>
-                  </div>
+                  <div className="mb-2"><span className="text-gray-500 text-xs">Купленные элементы</span><p className="font-medium text-sm sm:text-base break-words">{payment.item || payment.description || '—'}</p></div>
                   <div className="flex justify-between items-center">
                     <span className="text-gray-500 text-xs">Статус</span>
-                    <span className={`px-3 py-1 rounded-full text-xs sm:text-sm ${getStatusClass(payment.status)}`}>
-                      {getStatusText(payment.status)}
-                    </span>
+                    <span className={`px-3 py-1 rounded-full text-xs sm:text-sm ${getStatusClass(payment.status)}`}>{getStatusText(payment.status)}</span>
                   </div>
                 </div>
               ))}
@@ -1209,70 +1076,6 @@ function PaymentsTab({ cards, setCards, payments }) {
           )}
         </div>
       </div>
-
-    </div>
-  );
-}
-
-// СТРАНИЦА "РЕЗУЛЬТАТЫ"
-function ResultsTab({ results }) {
-  const getMedalColor = (medal) => {
-    switch (medal?.toLowerCase()) {
-      case 'золото':
-      case 'gold':
-        return 'text-yellow-500';
-      case 'серебро':
-      case 'silver':
-        return 'text-gray-400';
-      case 'бронза':
-      case 'bronze':
-        return 'text-amber-600';
-      default:
-        return 'text-gray-500';
-    }
-  };
-
-  const getMedalText = (medal) => {
-    switch (medal?.toLowerCase()) {
-      case 'gold':
-        return 'Золото';
-      case 'silver':
-        return 'Серебро';
-      case 'bronze':
-        return 'Бронза';
-      default:
-        return medal || '—';
-    }
-  };
-
-  return (
-    <div className="bg-white rounded-xl shadow-[0px_0px_25px_10px_rgba(0,0,0,0.1)] p-4 sm:p-6">
-      <h2 className="text-base sm:text-lg font-bold text-gray-800 mb-4">Результаты олимпиад</h2>
-      
-      {results.length === 0 ? (
-        <p className="text-gray-500 text-center py-8">У вас пока нет результатов олимпиад</p>
-      ) : (
-        <div className="space-y-3">
-          {results.map((result, idx) => (
-            <div key={idx} className="border rounded-xl p-4 flex flex-col sm:flex-row justify-between items-start gap-3 hover:shadow-md transition-shadow">
-              <div className="flex-1">
-                <h3 className="font-bold text-gray-800 text-sm sm:text-base break-words">
-                  {result.title || result.olympiad_name || '—'}
-                </h3>
-                <p className="text-sm text-gray-500 mt-2">Баллы: {result.score || result.points || '—'}</p>
-                <button className="text-sm text-[#8E51FF] hover:underline mt-2">
-                  Посмотреть ответы
-                </button>
-              </div>
-              <div className="flex justify-start w-full sm:w-auto sm:justify-end">
-                <div className={`text-xl sm:text-2xl font-bold ${getMedalColor(result.medal)} whitespace-nowrap`}>
-                  {getMedalText(result.medal)}
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
     </div>
   );
 }
