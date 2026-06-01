@@ -137,6 +137,26 @@ function ProfileButton() {
   const buttonRef = useRef(null);
   const router = useRouter();
 
+  // Проверка авторизации через localStorage (fallback)
+  const checkLocalStorageAuth = () => {
+    const token = localStorage.getItem('auth_token');
+    const user = localStorage.getItem('user');
+    
+    if (token && user) {
+      try {
+        const userData = JSON.parse(user);
+        console.log('Using localStorage auth fallback');
+        setIsAuthenticated(true);
+        setUserName(userData.name || userData.fullname || userData.email?.split('@')[0] || 'Пользователь');
+        return true;
+      } catch (e) {
+        console.error('Error parsing user from localStorage:', e);
+        return false;
+      }
+    }
+    return false;
+  };
+
   const fetchCsrfToken = async () => {
     try {
       await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000'}/sanctum/csrf-cookie`, {
@@ -147,12 +167,11 @@ function ProfileButton() {
     }
   };
 
-  const fetchCurrentUser = async () => {
+  const fetchCurrentUserFromServer = async () => {
     try {
-      console.log('=== ProfileButton: fetchCurrentUser START ===');
+      console.log('=== Fetching user from server ===');
       await fetchCsrfToken();
       
-      console.log('Making request to /api/v1/user');
       const response = await fetch('/api/v1/user', {
         credentials: 'include',
         headers: {
@@ -170,27 +189,69 @@ function ProfileButton() {
         setIsAuthenticated(true);
         setUserName(userData.name || userData.fullname || userData.email?.split('@')[0] || 'Пользователь');
         localStorage.setItem('user', JSON.stringify(userData));
+        // Сохраняем флаг авторизации
+        localStorage.setItem('is_authenticated', 'true');
+        return true;
       } else if (response.status === 401) {
         console.log('User not authenticated (401)');
-        setIsAuthenticated(false);
-        setUserName('');
-        localStorage.removeItem('user');
+        // Если сервер вернул 401, проверяем localStorage
+        if (!checkLocalStorageAuth()) {
+          setIsAuthenticated(false);
+          setUserName('');
+          localStorage.removeItem('user');
+          localStorage.removeItem('auth_token');
+          localStorage.removeItem('is_authenticated');
+        }
+        return false;
       } else {
         const errorData = await response.json();
         console.log('Error response:', errorData);
-        setIsAuthenticated(false);
+        // При ошибке проверяем localStorage
+        if (!checkLocalStorageAuth()) {
+          setIsAuthenticated(false);
+        }
+        return false;
       }
     } catch (error) {
-      console.error('Error in fetchCurrentUser:', error);
-      setIsAuthenticated(false);
-    } finally {
-      setLoading(false);
-      console.log('=== ProfileButton: fetchCurrentUser END ===');
+      console.error('Error fetching user from server:', error);
+      // При ошибке сети пробуем localStorage
+      checkLocalStorageAuth();
+      return false;
     }
+  };
+
+  const fetchCurrentUser = async () => {
+    // Сначала пробуем localStorage как быстрый fallback
+    if (checkLocalStorageAuth()) {
+      setLoading(false);
+      // Все равно пробуем обновить данные с сервера в фоне
+      fetchCurrentUserFromServer().finally(() => {
+        // Убеждаемся, что loading снят
+        setLoading(false);
+      });
+      return;
+    }
+    
+    // Если localStorage пуст, идем на сервер
+    await fetchCurrentUserFromServer();
+    setLoading(false);
   };
 
   useEffect(() => {
     fetchCurrentUser();
+  }, []);
+
+  // Слушаем изменения в localStorage (для синхронизации между вкладками)
+  useEffect(() => {
+    const handleStorageChange = (e) => {
+      if (e.key === 'auth_token' || e.key === 'user' || e.key === 'is_authenticated') {
+        console.log('Storage changed, re-fetching user');
+        fetchCurrentUser();
+      }
+    };
+    
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
   }, []);
 
   useEffect(() => {
@@ -223,7 +284,10 @@ function ProfileButton() {
       console.error('Ошибка при выходе:', error);
     }
     
+    // Очищаем все данные авторизации
     localStorage.removeItem('user');
+    localStorage.removeItem('auth_token');
+    localStorage.removeItem('is_authenticated');
     setIsAuthenticated(false);
     setIsOpen(false);
     router.push('/');
