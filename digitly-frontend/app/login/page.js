@@ -17,6 +17,7 @@ export default function Login() {
     setError('');
     
     try {
+      // Явно указываем полный URL или используем относительный путь к API route
       const response = await fetch('/api/v1/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -26,11 +27,19 @@ export default function Login() {
       const data = await response.json();
       
       if (response.ok) {
+        // Устанавливаем флаг авторизации в localStorage для быстрого доступа
+        localStorage.setItem('is_authenticated', 'true');
+        localStorage.setItem('user', JSON.stringify(data.user));
+        
+        // Триггерим событие для других компонентов
+        window.dispatchEvent(new Event('storage'));
+        
         router.push('/'); 
       } else {
         setError(data.message || 'Неверный email или пароль');
       }
     } catch (err) {
+      console.error('Login fetch error:', err);
       setError('Ошибка соединения с сервером');
     } finally {
       setIsLoading(false);
@@ -64,12 +73,12 @@ export default function Login() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="border-2 border-gray-200 rounded-xl pl-4  hover:border-gray-300 outline-none w-full max-w-[384px] text-xs sm:text-sm md:text-base"
+                className="border-2 border-gray-200 rounded-xl pl-4 hover:border-gray-300 outline-none w-full max-w-[384px] text-xs sm:text-sm md:text-base"
                 style={{ height: '40px' }}
               />
 
               <div className="w-full max-w-[384px]">
-                <p className="font-sans text-xl mb-1 text-left  mt-4 text-black">Пароль</p>
+                <p className="font-sans text-xl mb-1 text-left mt-4 text-black">Пароль</p>
               </div>
 
               <input 
@@ -78,7 +87,7 @@ export default function Login() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                className="border-2 border-gray-200 rounded-xl pl-4  hover:border-gray-300 outline-none w-full max-w-[384px] text-xs sm:text-sm md:text-base"
+                className="border-2 border-gray-200 rounded-xl pl-4 hover:border-gray-300 outline-none w-full max-w-[384px] text-xs sm:text-sm md:text-base"
                 style={{ height: '40px' }}
               />
               
@@ -94,6 +103,7 @@ export default function Login() {
                   Запомнить меня
                 </label>
               </div>
+              
               {error && (
                 <p className="text-red-500 text-sm w-full max-w-[384px] mt-2 text-center">
                   {error}
@@ -104,26 +114,28 @@ export default function Login() {
                 type="submit" 
                 disabled={isLoading}
                 className={`px-6 py-2 rounded-xl bg-red-300 font-sans text-white hover:bg-red-400 transition-colors mt-4 ${
-                isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}>{isLoading ? 'Вход...' : 'Войти'}</button>
+                  isLoading ? 'opacity-50 cursor-not-allowed' : ''
+                }`}
+              >
+                {isLoading ? 'Вход...' : 'Войти'}
+              </button>
             </form>
             
-            <Link href="/password/forgot" 
-                  className="hover:underline mt-4  text-sm sm:text-base">
+            <Link href="/password/forgot" className="hover:underline mt-4 text-sm sm:text-base">
               Забыли пароль?
             </Link>
-            {/* Кнопка назад */}
-              <button 
-                  type="button"
-                  onClick={() => router.back()}
-                  className="mt-3 text-sm text-gray-500 hover:text-gray-700"
-              >
-                  ← Назад
-              </button>
+            
+            <button 
+              type="button"
+              onClick={() => router.back()}
+              className="mt-3 text-sm text-gray-500 hover:text-gray-700"
+            >
+              ← Назад
+            </button>
           </div>
         </div>
         
-        <Link href="/registr" 
-              className="mt-4 font-sans text-white text-sm sm:text-base text-center">
+        <Link href="/registr" className="mt-4 font-sans text-white text-sm sm:text-base text-center">
           Нет аккаунта? <span className="underline">Зарегистрироваться</span>
         </Link>
       </div>
