@@ -1,10 +1,9 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
-import { useRouter } from "next/navigation";
 import Link from 'next/link';
+import { createPortal } from 'react-dom';
 
 //  МАССИВЫ С ДАННЫМИ 
-// Массив отзывов
 const allReviews = [
   {
     id: 1,
@@ -48,7 +47,6 @@ const allReviews = [
   }
 ];
 
-// Массив колледжей
 const allColleges = [
   {
     id: 1,
@@ -87,12 +85,7 @@ const allColleges = [
   }
 ];
 
-// ========== КОМПОНЕНТ КАРТОЧКИ КОЛЛЕДЖА ==========
 function CollegeCard({ college, isActive = false }) {
-  const shortName = college.name.length > 45 
-    ? college.name.substring(0, 45) + "..." 
-    : college.name;
-
   return (
     <div 
       className={`bg-white/90 rounded-3xl shadow-xl p-6 w-full h-full flex flex-col transition-all duration-300 ${
@@ -110,23 +103,22 @@ function CollegeCard({ college, isActive = false }) {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 21v-2a4 4 0 00-4-4H9a4 4 0 00-4 4v2M12 3a4 4 0 100 8 4 4 0 000-8z" />
           </svg>
         </div>
-        
-        <h3 className="font-bold text-xl md:text-2xl mb-3 leading-tight px-2 line-clamp-2">
-          {shortName}
+        <h3 className="font-bold text-gray-800 text-lg md:text-xl lg:text-2xl mb-3 leading-tight px-2 break-words">
+          {college.name}
         </h3>
-        
-        <p className="text-gray-600 text-base md:text-lg mb-4 line-clamp-2 px-2">
+        <p className="text-gray-600 text-sm md:text-base lg:text-lg mb-4 px-2 break-words">
           {college.description}
         </p>
-        
-        <div className="flex justify-center gap-8 pt-3 border-t border-gray-300 w-full">
+        <div className="flex justify-center gap-6 md:gap-8 pt-3 border-t border-gray-300 w-full">
           <div className="text-center">
             <p className="font-bold text-xl md:text-2xl text-violet-700">{college.olympiads}</p>
-            <p className="text-sm text-gray-500">Олимпиад</p>
+            <p className="text-xs md:text-sm text-gray-500">Олимпиад</p>
           </div>
           <div className="text-center">
             <p className="font-bold text-xl md:text-2xl text-violet-700">{college.methods}</p>
-            <p className="text-sm text-gray-500">Методических<br />элементов</p>
+            <p className="text-xs md:text-sm text-gray-500 leading-tight">
+              Методических<br className="hidden sm:block" />элементов
+            </p>
           </div>
         </div>
       </div>
@@ -134,147 +126,131 @@ function CollegeCard({ college, isActive = false }) {
   );
 }
 
-//  КОМПОНЕНТ КНОПКИ ПРОФИЛЯ 
+// КОМПОНЕНТ КНОПКИ ПРОФИЛЯ 
 function ProfileButton() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [userName, setUserName] = useState('');
   const [isOpen, setIsOpen] = useState(false);
-  const menuRef = useRef(null);
   const buttonRef = useRef(null);
-  const router = useRouter();
+  const menuRef = useRef(null);
 
   useEffect(() => {
-    const checkAuth = () => {
-      const token = localStorage.getItem('token');
-      const user = localStorage.getItem('user');
-      
-      setIsAuthenticated(!!token);
-      
-      if (user) {
-        try {
-          const userData = JSON.parse(user);
-          setUserName(userData.name || userData.fullname || 'Пользователь');
-        } catch {
-          setUserName('Пользователь');
-        }
+    const token = localStorage.getItem('token');
+    const user = localStorage.getItem('user');
+    setIsAuthenticated(!!token);
+    if (user) {
+      try {
+        const userData = JSON.parse(user);
+        setUserName(userData.name || userData.fullname || 'Пользователь');
+      } catch {
+        setUserName('Пользователь');
       }
-    };
-    
-    checkAuth();
-    window.addEventListener('storage', checkAuth);
-    return () => window.removeEventListener('storage', checkAuth);
+    }
   }, []);
 
-  // Закрытие меню при клике вне
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (menuRef.current && !menuRef.current.contains(event.target) && 
-          buttonRef.current && !buttonRef.current.contains(event.target)) {
+      if (isOpen && buttonRef.current && !buttonRef.current.contains(event.target) &&
+          menuRef.current && !menuRef.current.contains(event.target)) {
         setIsOpen(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+  }, [isOpen]);
 
   const toggleMenu = () => setIsOpen(!isOpen);
-
-  const handleNavigation = (path) => {
+  
+  const goTo = (path) => {
+    console.log('Переход на:', path);
     setIsOpen(false);
-    router.push(path);
+    window.location.href = path;
   };
-
-  const handleLogout = () => {
+  
+  const logout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
-    setIsAuthenticated(false);
-    setIsOpen(false);
-    router.push('/');
-    window.dispatchEvent(new Event('storage'));
+    window.location.href = '/';
   };
 
-  if (isAuthenticated) {
+  if (!isAuthenticated) {
     return (
-      <div className="relative">
-        <button
-          ref={buttonRef}
-          onClick={toggleMenu}
-          className="bg-white rounded-xl flex items-center justify-center gap-0.5 sm:gap-1 md:gap-1.5 font-sans font-medium shadow-sm whitespace-nowrap text-[13px] sm:text-sm md:text-base lg:text-[15px] px-3 sm:px-4 md:px-4 lg:px-5 py-1.5 sm:py-1.5 md:py-2 lg:py-1.5 hover:bg-gray-50 transition-colors"
-        >
-          <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-          </svg>
-          <span className="hidden sm:inline max-w-[100px] truncate">{userName.split(' ')[0]}</span>
-          <svg className={`w-3 h-3 sm:w-3.5 sm:h-3.5 ml-1 transition-transform ${isOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-          </svg>
-        </button>
-
-        {isOpen && (
-          <div
-            ref={menuRef}
-            className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg overflow-hidden z-50"
-          >
-            <button
-              onClick={() => handleNavigation('/profile')}
-              className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-            >
-              <div className="flex items-center gap-2">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                </svg>
-                Личный кабинет
-              </div>
-            </button>
-            <button
-              onClick={() => handleNavigation('/profile/security')}
-              className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-            >
-              <div className="flex items-center gap-2">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                </svg>
-                Безопасность
-              </div>
-            </button>
-            <button
-              onClick={() => handleNavigation('/profile/settings')}
-              className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-            >
-              <div className="flex items-center gap-2">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
-                Настройки
-              </div>
-            </button>
-            <div className="border-t border-gray-100"></div>
-            <button
-              onClick={handleLogout}
-              className="w-full text-left px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors"
-            >
-              <div className="flex items-center gap-2">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                </svg>
-                Выйти
-              </div>
-            </button>
-          </div>
-        )}
-      </div>
+      <Link href="/login" className="bg-white rounded-xl flex items-center justify-center gap-0.5 sm:gap-1 md:gap-1.5 font-sans font-medium shadow-sm whitespace-nowrap text-[13px] sm:text-sm md:text-base lg:text-[15px] px-3 sm:px-4 md:px-4 lg:px-5 py-1.5 sm:py-1.5 md:py-2 lg:py-1.5 hover:bg-gray-50 transition-colors">
+        <span className="text-gray-700">Вход</span>
+        <img src="/chifra/arrow.png" alt="стрелка" className="w-3 h-3 sm:w-3.5 sm:h-3.5 md:w-4 md:h-4 lg:w-4 lg:h-4" />
+      </Link>
     );
   }
 
   return (
-    <Link href="/login" className="bg-white rounded-xl flex items-center justify-center gap-0.5 sm:gap-1 md:gap-1.5 font-sans font-medium shadow-sm whitespace-nowrap text-[13px] sm:text-sm md:text-base lg:text-[15px] px-3 sm:px-4 md:px-4 lg:px-5 py-1.5 sm:py-1.5 md:py-2 lg:py-1.5 hover:bg-gray-50 transition-colors">
-      <span>Вход</span>
-      <img src="/chifra/arrow.png" alt="стрелка" className="w-3 h-3 sm:w-3.5 sm:h-3.5 md:w-4 md:h-4 lg:w-4 lg:h-4" />
-    </Link>
+    <div className="relative inline-block">
+      <button
+        ref={buttonRef}
+        onClick={toggleMenu}
+        className="bg-white rounded-xl flex items-center justify-center gap-0.5 sm:gap-1 md:gap-1.5 font-sans font-medium shadow-sm whitespace-nowrap text-[13px] sm:text-sm md:text-base lg:text-[15px] px-3 sm:px-4 md:px-4 lg:px-5 py-1.5 sm:py-1.5 md:py-2 lg:py-1.5 hover:bg-gray-50 transition-colors"
+      >
+        <svg className="w-4 h-4 sm:w-5 sm:h-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+        </svg>
+        <span className="hidden sm:inline max-w-[100px] truncate text-gray-700">{userName.split(' ')[0]}</span>
+        <svg className={`w-3 h-3 sm:w-3.5 sm:h-3.5 ml-1 transition-transform text-gray-500 ${isOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+
+      {isOpen && (
+        <div
+          ref={menuRef}
+          className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg overflow-hidden"
+          style={{ position: 'absolute', top: '100%', right: 0, zIndex: 2147483647 }}
+        >
+          <div
+            onClick={() => goTo('/profile')}
+            className="block w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer"
+          >
+            Личный кабинет
+          </div>
+          <div
+            onClick={() => goTo('/profile/security')}
+            className="block w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer"
+          >
+            Безопасность
+          </div>
+          <div
+            onClick={() => goTo('/profile/settings')}
+            className="block w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer"
+          >
+            Настройки
+          </div>
+          <div className="border-t border-gray-100"></div>
+          <div
+            onClick={logout}
+            className="w-full text-left px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
+          >
+            Выйти
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
 
+// Компонент навигации 
+function NavigationButtons() {
+  return (
+    <div className="flex items-center gap-1.5 sm:gap-2 md:gap-3 lg:gap-4">
+      <Link href="/olympiads" className="bg-white rounded-xl flex items-center justify-center gap-0.5 sm:gap-1 md:gap-1.5 font-sans font-medium shadow-sm whitespace-nowrap text-[13px] sm:text-sm md:text-base lg:text-[15px] px-3 sm:px-4 md:px-4 lg:px-5 py-1.5 sm:py-1.5 md:py-2 lg:py-1.5 hover:bg-gray-50 transition-colors">
+        <span className="text-gray-700">Олимпиады</span>
+        <img src="chifra/arrow.png" alt="стрелка" className="w-3 h-3 sm:w-3.5 sm:h-3.5 md:w-4 md:h-4 lg:w-4 lg:h-4" />
+      </Link>
+      <Link href="/methodics" className="bg-white rounded-xl flex items-center justify-center gap-0.5 sm:gap-1 md:gap-1.5 font-sans font-medium shadow-sm whitespace-nowrap text-[13px] sm:text-sm md:text-base lg:text-[15px] px-3 sm:px-4 md:px-4 lg:px-5 py-1.5 sm:py-1.5 md:py-2 lg:py-1.5 hover:bg-gray-50 transition-colors">
+        <span className="text-gray-700">Методочки</span>
+        <img src="chifra/arrow.png" alt="стрелка" className="w-3 h-3 sm:w-3.5 sm:h-3.5 md:w-4 md:h-4 lg:w-4 lg:h-4" />
+      </Link>
+      <ProfileButton />
+    </div>
+  );
+}
 
 //  ОСНОВНОЙ КОМПОНЕНТ 
 export default function PasswordRecoveryEmail() {
@@ -289,7 +265,6 @@ export default function PasswordRecoveryEmail() {
       setCurrentReviewIndex(0);
     }
   };
-
   const prevReviews = () => {
     if (currentReviewIndex > 0) {
       setCurrentReviewIndex(currentReviewIndex - 1);
@@ -297,363 +272,215 @@ export default function PasswordRecoveryEmail() {
       setCurrentReviewIndex(Math.max(0, allReviews.length - reviewsToShow));
     }
   };
-
   const visibleReviews = allReviews.slice(currentReviewIndex, currentReviewIndex + reviewsToShow);
 
   const nextCollege = () => {
     setCurrentCollegeIndex((prev) => (prev + 1) % allColleges.length);
   };
-
   const prevCollege = () => {
     setCurrentCollegeIndex((prev) => (prev - 1 + allColleges.length) % allColleges.length);
   };
-
   const leftIndex = (currentCollegeIndex - 1 + allColleges.length) % allColleges.length;
   const rightIndex = (currentCollegeIndex + 1) % allColleges.length;
 
-  // Компонент навигации для повторного использования
-  const NavigationButtons = () => (
-    <div className="flex items-center gap-1.5 sm:gap-2 md:gap-3 lg:gap-4">
-      <Link href="/olympiads" className="bg-white rounded-xl flex items-center justify-center gap-0.5 sm:gap-1 md:gap-1.5 font-sans font-medium shadow-sm whitespace-nowrap text-[13px] sm:text-sm md:text-base lg:text-[15px] px-3 sm:px-4 md:px-4 lg:px-5 py-1.5 sm:py-1.5 md:py-2 lg:py-1.5 hover:bg-gray-50 transition-colors">
-        <span>Олимпиады</span>
-        <img src="chifra/arrow.png" alt="стрелка" className="w-3 h-3 sm:w-3.5 sm:h-3.5 md:w-4 md:h-4 lg:w-4 lg:h-4" />
-      </Link>
-      <Link href="/methodics" className="bg-white rounded-xl flex items-center justify-center gap-0.5 sm:gap-1 md:gap-1.5 font-sans font-medium shadow-sm whitespace-nowrap text-[13px] sm:text-sm md:text-base lg:text-[15px] px-3 sm:px-4 md:px-4 lg:px-5 py-1.5 sm:py-1.5 md:py-2 lg:py-1.5 hover:bg-gray-50 transition-colors">
-        <span>Методочки</span>
-        <img src="chifra/arrow.png" alt="стрелка" className="w-3 h-3 sm:w-3.5 sm:h-3.5 md:w-4 md:h-4 lg:w-4 lg:h-4" />
-      </Link>
-      <ProfileButton />
-    </div>
-  );
-
   return (  
     <div>
-      {/*  ПЕРВЫЙ БЛОК (ГЛАВНЫЙ ЭКРАН)  */}
-      <div className="min-h-screen bg-cover bg-center bg-no-repeat relative" 
-        style={{ backgroundImage: "url('/main_page.png')" }}>
-        
-        <div className="absolute inset-0 bg-cover bg-center bg-no-repeat" 
-          style={{ backgroundImage: "url('chifra/binary_001.png')" }} />
-        
+      {/* ПЕРВЫЙ БЛОК (ГЛАВНЫЙ ЭКРАН) */}
+      <div className="min-h-screen bg-cover bg-center bg-no-repeat relative" style={{ backgroundImage: "url('/main_page.png')" }}>
+        <div className="absolute inset-0 bg-cover bg-center bg-no-repeat" style={{ backgroundImage: "url('chifra/binary_001.png')" }} />
         <div className="absolute top-4 left-0 right-0 z-20 flex justify-between items-center px-4 sm:px-6 md:px-8">
-          <div>
-            <img src="chifra/logo_chifra.png" alt="Цифра" className="hidden sm:block w-12 sm:w-16 md:w-20 lg:w-24 h-auto" />  
-          </div>
+          <div><img src="chifra/logo_chifra.png" alt="Цифра" className="hidden sm:block w-12 sm:w-16 md:w-20 lg:w-24 h-auto" /></div>
           <NavigationButtons />
         </div>
-        
         <div className="relative z-10 flex items-center justify-center min-h-screen px-4">
-          <img 
-            src="chifra/chifra_olympiad.png" 
-            alt="Цифра Центр онлайн олимпиад" 
-            className="w-full max-w-[90%] sm:max-w-[80%] md:max-w-[717px] h-auto px-2 sm:px-4"
-          />  
+          <img src="chifra/chifra_olympiad.png" alt="Цифра Центр онлайн олимпиад" className="w-full max-w-[90%] sm:max-w-[80%] md:max-w-[717px] h-auto px-2 sm:px-4" />
         </div>
       </div>
-      
-      {/*  ВТОРОЙ БЛОК (ПРЕИМУЩЕСТВА)  */}
+
+      {/* ВТОРОЙ БЛОК (ПРЕИМУЩЕСТВА) */}
       <div className="min-h-screen flex flex-col p-4 sm:p-6 md:p-8" style={{ backgroundColor: '#EDE9FE' }}>
-        
         <div className="flex justify-between items-center px-2 sm:px-4 md:px-8 py-2 sm:py-4">
-          <div>
-            <img src="chifra/logo_chifra_black.png" alt="Цифра" className="hidden sm:block w-12 sm:w-16 md:w-20 lg:w-24 h-auto" /> 
-          </div>
+          <div><img src="chifra/logo_chifra_black.png" alt="Цифра" className="hidden sm:block w-12 sm:w-16 md:w-20 lg:w-24 h-auto" /></div>
           <NavigationButtons />
         </div>
-        
         <div className="flex-1 flex justify-center items-center">
           <div className="w-full max-w-[1328px] px-2 sm:px-4 md:px-8">
-            <p className="font-bold text-2xl sm:text-3xl md:text-4xl lg:text-6xl mb-4 sm:mb-6 md:mb-8 font-sans text-center lg:text-left">
-              ПРЕИМУЩЕСТВА
-            </p>
-            
+            <p className="font-bold text-2xl sm:text-3xl md:text-4xl lg:text-6xl mb-4 sm:mb-6 md:mb-8 font-sans text-center lg:text-left text-gray-800">ПРЕИМУЩЕСТВА</p>
             <div className="flex flex-col xl:flex-row gap-6 sm:gap-8 font-sans">
-              
               <div className="relative bg-white rounded-xl flex flex-col justify-end flex-1 min-w-[280px] overflow-hidden" style={{ height: 'auto', minHeight: '400px' }}>
-                <img 
-                  src="chifra/binary_003.png" 
-                  alt="binary bg" 
-                  className="absolute inset-0 w-full h-full object-cover opacity-20 z-0 pointer-events-none"
-                />
+                <img src="chifra/binary_003.png" alt="binary bg" className="absolute inset-0 w-full h-full object-cover opacity-20 z-0 pointer-events-none" />
                 <div className="absolute top-4 right-4 bg-violet-500 rounded-full w-10 h-10 sm:w-12 sm:h-12 md:w-16 md:h-16 flex items-center justify-center z-10">
                   <img src="chifra/check_mark.png" alt="галочка" className="w-5 h-5 sm:w-6 sm:h-6 md:w-8 md:h-8" />
                 </div>
                 <div className="relative z-10 p-4 sm:p-6">
-                  <p className="font-bold text-lg sm:text-xl md:text-2xl lg:text-3xl mb-2 font-sans">Сотрудничество</p>
-                  <p className="text-sm sm:text-base md:text-lg lg:text-xl font-sans">Сотрудничество включает взаимодействие с работодателями и социальными партнерами для разработки образовательных программ.</p>
+                  <p className="font-bold text-gray-800 text-lg sm:text-xl md:text-2xl lg:text-3xl mb-2 font-sans">Сотрудничество</p>
+                  <p className="text-gray-600 text-sm sm:text-base md:text-lg lg:text-xl font-sans">Сотрудничество включает взаимодействие с работодателями и социальными партнерами для разработки образовательных программ.</p>
                 </div>
               </div>
-              
               <div className="flex flex-col gap-6 sm:gap-8 flex-1 min-w-[280px]">
-                
                 <div className="relative bg-white rounded-xl flex flex-col justify-end overflow-hidden" style={{ height: 'auto', minHeight: '200px' }}>
-                  <img 
-                    src="chifra/binary_005.png" 
-                    alt="binary bg" 
-                    className="absolute inset-0 object-cover opacity-70 z-0 pointer-events-none"
-                  />
+                  <img src="chifra/binary_005.png" alt="binary bg" className="absolute inset-0 object-cover opacity-70 z-0 pointer-events-none" />
                   <div className="absolute top-4 right-4 bg-violet-500 rounded-full w-10 h-10 sm:w-12 sm:h-12 md:w-16 md:h-16 flex items-center justify-center z-10">
                     <img src="chifra/check_mark.png" alt="галочка" className="w-5 h-5 sm:w-6 sm:h-6 md:w-8 md:h-8" />
                   </div>
                   <div className="relative z-10 p-4 sm:p-6">
-                    <p className="font-bold text-lg sm:text-xl md:text-2xl lg:text-3xl mb-2 font-sans">Нет ограничений</p>
-                    <p className="text-sm sm:text-base md:text-lg lg:text-xl font-sans">Нет ограничений в плане обучения и прохождения, нет ограничений по времени, учитесь в своем удобном темпе, олимпиады открыты и днем и ночью.</p>
+                    <p className="font-bold text-gray-800 text-lg sm:text-xl md:text-2xl lg:text-3xl mb-2 font-sans">Нет ограничений</p>
+                    <p className="text-gray-600 text-sm sm:text-base md:text-lg lg:text-xl font-sans">Нет ограничений в плане обучения и прохождения, нет ограничений по времени, учитесь в своем удобном темпе, олимпиады открыты и днем и ночью.</p>
                   </div>
                 </div>
-                
                 <div className="relative bg-white rounded-xl flex flex-col justify-end overflow-hidden" style={{ height: 'auto', minHeight: '200px' }}>
-                  <img 
-                    src="chifra/binary_004.png" 
-                    alt="binary bg" 
-                    className="absolute inset-0 w-full h-full object-cover opacity-70 z-0 pointer-events-none"
-                  />
+                  <img src="chifra/binary_004.png" alt="binary bg" className="absolute inset-0 w-full h-full object-cover opacity-70 z-0 pointer-events-none" />
                   <div className="absolute top-4 right-4 bg-violet-500 rounded-full w-10 h-10 sm:w-12 sm:h-12 md:w-16 md:h-16 flex items-center justify-center z-10">
                     <img src="chifra/check_mark.png" alt="галочка" className="w-5 h-5 sm:w-6 sm:h-6 md:w-8 md:h-8" />
                   </div>
                   <div className="relative z-10 p-4 sm:p-6">
-                    <p className="font-bold text-lg sm:text-xl md:text-2xl lg:text-3xl mb-2">Легкость</p>
-                    <p className="text-sm sm:text-base md:text-lg lg:text-xl font-sans">Не нужно много знаний чтобы понять как проходить олимпиады. У нас все легко и просто. Учитесь, развивайтесь и узнавайте мир вместе с нами!</p>
+                    <p className="font-bold text-gray-800 text-lg sm:text-xl md:text-2xl lg:text-3xl mb-2">Легкость</p>
+                    <p className="text-gray-600 text-sm sm:text-base md:text-lg lg:text-xl font-sans">Не нужно много знаний чтобы понять как проходить олимпиады. У нас все легко и просто. Учитесь, развивайтесь и узнавайте мир вместе с нами!</p>
                   </div>
                 </div>
-                
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/*  ТРЕТИЙ БЛОК (ЦИФРЫ)  */}
-      <div className="min-h-screen bg-cover bg-center bg-no-repeat relative" 
-        style={{ backgroundImage: "url('/main_page.png')" }}>
-
-        <div className="absolute inset-0 bg-contain bg-center bg-no-repeat m-4" 
-          style={{ backgroundImage: "url('chifra/binary_002.png')" }} />
-        
+      {/* ТРЕТИЙ БЛОК (ЦИФРЫ) */}
+      <div className="min-h-screen bg-cover bg-center bg-no-repeat relative" style={{ backgroundImage: "url('/main_page.png')" }}>
+        <div className="absolute inset-0 bg-contain bg-center bg-no-repeat m-4" style={{ backgroundImage: "url('chifra/binary_002.png')" }} />
         <div className="absolute top-4 left-0 right-0 z-20 flex justify-between items-center px-4 sm:px-6 md:px-8">
-          <div>
-            <img src="chifra/logo_chifra.png" alt="Цифра" className="hidden sm:block w-12 sm:w-16 md:w-20 lg:w-24 h-auto" />  
-          </div>
+          <div><img src="chifra/logo_chifra.png" alt="Цифра" className="hidden sm:block w-12 sm:w-16 md:w-20 lg:w-24 h-auto" /></div>
           <NavigationButtons />
         </div>
-
         <div className="relative z-10 flex flex-col items-center justify-center min-h-screen px-4 pt-20 pb-12">
           <div className="flex flex-wrap justify-center gap-6 sm:gap-8 text-white">
-            
-            <div className="rounded-xl m-2 sm:m-4 flex flex-col justify-center items-center backdrop-blur-sm w-[calc(100%-1rem)] sm:w-[280px]"
-                style={{ 
-                  height: '186px', 
-                  background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.85), rgba(168, 85, 247, 0.85))'
-                }}>
+            <div className="rounded-xl m-2 sm:m-4 flex flex-col justify-center items-center backdrop-blur-sm w-[calc(100%-1rem)] sm:w-[280px]" style={{ height: '186px', background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.85), rgba(168, 85, 247, 0.85))' }}>
               <img src="chifra/smailey_people.png" alt="стрелка" className="w-6 h-6 sm:w-8 sm:h-8 mt-3 sm:mt-4" />
-              <p className="mt-2 sm:mt-4 font-sans text-xl sm:text-3xl md:text-4xl lg:text-5xl">29430</p>
-              <p className="mt-1 sm:mt-4 font-sans text-xs sm:text-base">Студентов</p>
+              <p className="mt-2 sm:mt-4 font-sans text-white text-xl sm:text-3xl md:text-4xl lg:text-5xl">29430</p>
+              <p className="mt-1 sm:mt-4 font-sans text-white text-xs sm:text-base">Студентов</p>
             </div>
-            
-            <div className="rounded-xl m-2 sm:m-4 flex flex-col justify-center items-center backdrop-blur-sm w-[calc(100%-1rem)] sm:w-[280px]"
-                style={{ 
-                  height: '186px', 
-                  background: 'linear-gradient(135deg, rgba(168, 85, 247, 0.85), rgba(126, 34, 206, 0.85))'
-                }}>
+            <div className="rounded-xl m-2 sm:m-4 flex flex-col justify-center items-center backdrop-blur-sm w-[calc(100%-1rem)] sm:w-[280px]" style={{ height: '186px', background: 'linear-gradient(135deg, rgba(168, 85, 247, 0.85), rgba(126, 34, 206, 0.85))' }}>
               <img src="chifra/smailey_check_paper.png" alt="стрелка" className="w-6 h-6 sm:w-8 sm:h-8 mt-3 sm:mt-4" />
-              <p className="mt-2 sm:mt-4 font-sans text-xl sm:text-3xl md:text-4xl lg:text-5xl">2389</p>
-              <p className="mt-1 sm:mt-4 font-sans text-xs sm:text-base">Олимпиад</p>
+              <p className="mt-2 sm:mt-4 font-sans text-white text-xl sm:text-3xl md:text-4xl lg:text-5xl">2389</p>
+              <p className="mt-1 sm:mt-4 font-sans text-white text-xs sm:text-base">Олимпиад</p>
             </div>
-            
-            <div className="rounded-xl m-2 sm:m-4 flex flex-col justify-center items-center backdrop-blur-sm w-[calc(100%-1rem)] sm:w-[280px]"
-                style={{ 
-                  height: '186px', 
-                  background: 'linear-gradient(135deg, rgba(126, 34, 206, 0.85), rgba(88, 28, 135, 0.85))'
-                }}>
+            <div className="rounded-xl m-2 sm:m-4 flex flex-col justify-center items-center backdrop-blur-sm w-[calc(100%-1rem)] sm:w-[280px]" style={{ height: '186px', background: 'linear-gradient(135deg, rgba(126, 34, 206, 0.85), rgba(88, 28, 135, 0.85))' }}>
               <img src="chifra/smailey_handsnake.png" alt="стрелка" className="w-6 h-6 sm:w-8 sm:h-8 mt-3 sm:mt-4" />
-              <p className="mt-2 sm:mt-4 font-sans text-xl sm:text-3xl md:text-4xl lg:text-5xl">29</p>
-              <p className="mt-1 sm:mt-4 font-sans text-xs sm:text-base">Партнеров</p>
+              <p className="mt-2 sm:mt-4 font-sans text-white text-xl sm:text-3xl md:text-4xl lg:text-5xl">29</p>
+              <p className="mt-1 sm:mt-4 font-sans text-white text-xs sm:text-base">Партнеров</p>
             </div>
-            
-            <div className="rounded-xl m-2 sm:m-4 flex flex-col justify-center items-center backdrop-blur-sm w-[calc(100%-1rem)] sm:w-[280px]"
-                style={{ 
-                  height: '186px', 
-                  background: 'linear-gradient(135deg, rgba(88, 28, 135, 0.85), rgba(76, 29, 149, 0.85), rgba(139, 92, 246, 0.7))'
-                }}>
+            <div className="rounded-xl m-2 sm:m-4 flex flex-col justify-center items-center backdrop-blur-sm w-[calc(100%-1rem)] sm:w-[280px]" style={{ height: '186px', background: 'linear-gradient(135deg, rgba(88, 28, 135, 0.85), rgba(76, 29, 149, 0.85), rgba(139, 92, 246, 0.7))' }}>
               <img src="chifra/smailey_heart.png" alt="стрелка" className="w-6 h-6 sm:w-8 sm:h-8 mt-3 sm:mt-4" />
-              <p className="mt-2 sm:mt-4 font-sans text-xl sm:text-3xl md:text-4xl lg:text-5xl">10</p>
-              <p className="mt-1 sm:mt-4 font-sans text-xs sm:text-base">Лет вместе</p>
+              <p className="mt-2 sm:mt-4 font-sans text-white text-xl sm:text-3xl md:text-4xl lg:text-5xl">10</p>
+              <p className="mt-1 sm:mt-4 font-sans text-white text-xs sm:text-base">Лет вместе</p>
             </div>
-            
           </div>
         </div>
       </div>
 
-      {/*  ЧЕТВЕРТЫЙ БЛОК (ОТЗЫВЫ)  */}
-      <div className="relative min-h-screen flex flex-col p-3 sm:p-4 overflow-hidden" 
-        style={{ backgroundColor: '#EDE9FE' }}>
-        
-        <img 
-          src="chifra/reviews1.png" 
-          alt=""
-          className="absolute bottom-0 left-0 z-0 pointer-events-none w-24 sm:w-auto opacity-0 sm:opacity-100"
-        />
-        <img 
-          src="chifra/reviews2.png" 
-          alt=""
-          className="absolute bottom-0 right-0 z-0 pointer-events-none w-24 sm:w-auto opacity-0 sm:opacity-100"
-        />
+      {/* ЧЕТВЕРТЫЙ БЛОК (ОТЗЫВЫ) */}
+      <div className="relative min-h-screen flex flex-col p-3 sm:p-4" style={{ backgroundColor: '#EDE9FE' }}>
+        <img src="chifra/reviews1.png" alt="" className="absolute bottom-0 left-0 w-24 sm:w-auto opacity-0 sm:opacity-100 pointer-events-none" style={{ zIndex: 0 }} />
+        <img src="chifra/reviews2.png" alt="" className="absolute bottom-0 right-0 w-24 sm:w-auto opacity-0 sm:opacity-100 pointer-events-none" style={{ zIndex: 0 }} />
 
-        <div className="relative z-10 flex justify-between items-center px-2 sm:px-4 md:px-8 py-2 sm:py-4">
-          <div>
-            <img src="chifra/logo_chifra_black.png" alt="Цифра" className="hidden sm:block w-12 sm:w-16 md:w-20 lg:w-24 h-auto" />  
+        <div className="relative flex flex-col justify-center min-h-screen" style={{ zIndex: 1 }}>
+          <div className="flex justify-between items-center px-2 sm:px-4 md:px-8 py-2 sm:py-4">
+            <div><img src="chifra/logo_chifra_black.png" alt="Цифра" className="hidden sm:block w-12 sm:w-16 md:w-20 lg:w-24 h-auto" /></div>
+            <NavigationButtons />
           </div>
-          <NavigationButtons />
-        </div>
-
-        <div className="relative z-10 flex-1 flex justify-center items-center">
-          <div className="w-full max-w-[1400px] mx-auto px-2 sm:px-4 md:px-8">
-            
-            <div className="flex flex-col sm:flex-row justify-between items-center sm:items-end mb-4 sm:mb-6 md:mb-8 gap-3 sm:gap-0">
-              <p className="font-bold text-2xl sm:text-3xl md:text-4xl lg:text-6xl font-sans text-center sm:text-left">
-                ОТЗЫВЫ
-              </p>
-              
-              <div className="flex gap-2">
-                <button onClick={prevReviews} className="bg-gray-100 hover:bg-gray-200 rounded-full flex items-center justify-center transition-colors"
-                  style={{ width: '70px', height: '24px' }}>
-                  <svg className="w-3 h-3 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                  </svg>
-                </button>
-                <button onClick={nextReviews} className="bg-gray-100 hover:bg-gray-200 rounded-full flex items-center justify-center transition-colors"
-                  style={{ width: '70px', height: '24px' }}>
-                  <svg className="w-3 h-3 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
-                </button>
+          <div className="flex-1 flex justify-center items-center">
+            <div className="w-full max-w-[1400px] mx-auto px-2 sm:px-4 md:px-8">
+              <div className="flex flex-col sm:flex-row justify-between items-center sm:items-end mb-4 sm:mb-6 md:mb-8 gap-3 sm:gap-0">
+                <p className="font-bold text-2xl sm:text-3xl md:text-4xl lg:text-6xl font-sans text-center sm:text-left text-gray-800">ОТЗЫВЫ</p>
+                <div className="flex gap-2">
+                  <button onClick={prevReviews} className="bg-gray-100 hover:bg-gray-200 rounded-full flex items-center justify-center transition-colors" style={{ width: '70px', height: '24px' }}>
+                    <svg className="w-3 h-3 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+                  </button>
+                  <button onClick={nextReviews} className="bg-gray-100 hover:bg-gray-200 rounded-full flex items-center justify-center transition-colors" style={{ width: '70px', height: '24px' }}>
+                    <svg className="w-3 h-3 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+                  </button>
+                </div>
               </div>
-            </div>
-
-            <div className="bg-white/90 rounded-3xl shadow-xl w-full py-8 sm:py-12 px-4 sm:px-6 md:px-10">
-              <div className="flex flex-wrap justify-center gap-6 sm:gap-8 md:gap-10">
-                {visibleReviews.map((review) => (
-                  <div key={review.id} className="flex flex-col w-full sm:w-[320px] md:w-[350px] lg:w-[380px] min-h-[300px] sm:min-h-[320px]">
-                    <img src="chifra/forging.png" alt="кавычки" className="w-8 h-8 sm:w-10 sm:h-10 mb-3 sm:mb-4" />
-                    <p className="text-gray-700 text-sm sm:text-base md:text-lg leading-relaxed flex-1 mb-4 sm:mb-6 line-clamp-4">
-                      {review.text}
-                    </p>
-                    <div className="flex items-center gap-3 sm:gap-4 mt-auto">
-                      <div className="w-10 h-10 sm:w-14 sm:h-14 bg-gray-300 rounded-full overflow-hidden">
-                        <img src={review.avatar} alt="аватар" className="w-full h-full object-cover" />
-                      </div>
-                      <div>
-                        <p className="font-bold text-gray-900 text-sm sm:text-base md:text-lg">{review.name}</p>
-                        <p className="text-xs sm:text-sm md:text-base text-gray-500">{review.role}</p>
-                        <div className="flex gap-0.5 sm:gap-1 mt-0.5 sm:mt-1">
-                          {[...Array(5)].map((_, i) => (
-                            <span key={i} className={`text-sm sm:text-base md:text-lg ${i < review.stars ? 'text-yellow-400' : 'text-gray-300'}`}>★</span>
-                          ))}
+              <div className="bg-white/90 rounded-3xl shadow-xl w-full py-8 sm:py-12 px-4 sm:px-6 md:px-10">
+                <div className="flex flex-wrap justify-center gap-6 sm:gap-8 md:gap-10">
+                  {visibleReviews.map((review) => (
+                    <div key={review.id} className="flex flex-col w-full sm:w-[320px] md:w-[350px] lg:w-[380px] min-h-[300px] sm:min-h-[320px]">
+                      <img src="chifra/forging.png" alt="кавычки" className="w-8 h-8 sm:w-10 sm:h-10 mb-3 sm:mb-4" />
+                      <p className="text-gray-700 text-sm sm:text-base md:text-lg leading-relaxed flex-1 mb-4 sm:mb-6 line-clamp-4">{review.text}</p>
+                      <div className="flex items-center gap-3 sm:gap-4 mt-auto">
+                        <div className="w-10 h-10 sm:w-14 sm:h-14 bg-gray-300 rounded-full overflow-hidden"><img src={review.avatar} alt="аватар" className="w-full h-full object-cover" /></div>
+                        <div>
+                          <p className="font-bold text-gray-800 text-sm sm:text-base md:text-lg">{review.name}</p>
+                          <p className="text-xs sm:text-sm md:text-base text-gray-500">{review.role}</p>
+                          <div className="flex gap-0.5 sm:gap-1 mt-0.5 sm:mt-1">
+                            {[...Array(5)].map((_, i) => (<span key={i} className={`text-sm sm:text-base md:text-lg ${i < review.stars ? 'text-yellow-500' : 'text-gray-300'}`}>★</span>))}
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </div>
+                  ))}
+                </div>
+              </div>
+              <div className="flex justify-center gap-2 sm:gap-3 mt-6 sm:mt-8">
+                {[...Array(Math.ceil(allReviews.length / reviewsToShow))].map((_, idx) => {
+                  const isActive = Math.floor(currentReviewIndex / reviewsToShow) === idx;
+                  return (<button key={idx} onClick={() => setCurrentReviewIndex(idx * reviewsToShow)} className={`transition-all duration-300 rounded-full ${isActive ? 'bg-gray-800 w-6 sm:w-8 h-1.5 sm:h-2' : 'bg-gray-400 hover:bg-gray-500 w-1.5 sm:w-2 h-1.5 sm:h-2'}`} />);
+                })}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ПЯТЫЙ БЛОК (КОЛЛЕДЖИ ПАРТНЕРЫ) */}
+      <div className="relative min-h-screen flex flex-col p-3 sm:p-4" style={{ backgroundColor: '#EDE9FE' }}>
+        <img src="chifra/lower_wave.png" alt="Волна" className="absolute bottom-0 left-0 w-full pointer-events-none" style={{ zIndex: 0 }} />
+        
+        <div className="relative" style={{ zIndex: 1 }}>
+          <div className="flex justify-between items-center px-2 sm:px-4 md:px-8 py-2 sm:py-4">
+            <div><img src="chifra/logo_chifra_black.png" alt="Цифра" className="hidden sm:block w-12 sm:w-16 md:w-20 lg:w-24 h-auto" /></div>
+            <NavigationButtons />
+          </div>
+          <div className="flex-1 flex justify-center items-center">
+            <div className="w-full max-w-[1400px] px-2 sm:px-4 md:px-8">
+              <div className="flex flex-col sm:flex-row justify-between items-center sm:items-end mb-4 sm:mb-6 md:mb-8 gap-3 sm:gap-0">
+                <p className="font-bold text-2xl sm:text-3xl md:text-4xl lg:text-6xl font-sans text-center sm:text-left text-gray-800">КОЛЛЕДЖИ ПАРТНЕРЫ</p>
+                <div className="flex gap-2">
+                  <button onClick={prevCollege} className="bg-gray-100 hover:bg-gray-200 rounded-full flex items-center justify-center transition-colors" style={{ width: '70px', height: '24px' }}>
+                    <svg className="w-3 h-3 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+                  </button>
+                  <button onClick={nextCollege} className="bg-gray-100 hover:bg-gray-200 rounded-full flex items-center justify-center transition-colors" style={{ width: '70px', height: '24px' }}>
+                    <svg className="w-3 h-3 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+                  </button>
+                </div>
+              </div>
+              <div className="flex justify-center items-center">
+                <div className="w-full lg:hidden">
+                  <CollegeCard college={allColleges[currentCollegeIndex]} isActive={true} />
+                </div>
+                <div className="hidden lg:grid lg:grid-cols-3 gap-6 items-stretch w-full">
+                  <div className="transition-all duration-300"><CollegeCard college={allColleges[leftIndex]} isActive={false} /></div>
+                  <div className="transition-all duration-300"><CollegeCard college={allColleges[currentCollegeIndex]} isActive={true} /></div>
+                  <div className="transition-all duration-300"><CollegeCard college={allColleges[rightIndex]} isActive={false} /></div>
+                </div>
+              </div>
+              <div className="flex justify-center gap-2 sm:gap-3 mt-8 sm:mt-12">
+                {allColleges.map((_, idx) => (
+                  <button key={idx} onClick={() => setCurrentCollegeIndex(idx)} className={`transition-all duration-300 rounded-full ${currentCollegeIndex === idx ? 'bg-gray-800 w-6 sm:w-8 h-1.5 sm:h-2' : 'bg-gray-400 hover:bg-gray-500 w-1.5 sm:w-2 h-1.5 sm:h-2'}`} />
                 ))}
               </div>
             </div>
-
-            <div className="flex justify-center gap-2 sm:gap-3 mt-6 sm:mt-8">
-              {[...Array(Math.ceil(allReviews.length / reviewsToShow))].map((_, idx) => {
-                const isActive = Math.floor(currentReviewIndex / reviewsToShow) === idx;
-                return (
-                  <button key={idx} onClick={() => setCurrentReviewIndex(idx * reviewsToShow)}
-                    className={`transition-all duration-300 rounded-full ${
-                      isActive ? 'bg-black w-6 sm:w-8 h-1.5 sm:h-2' : 'bg-gray-400 hover:bg-gray-500 w-1.5 sm:w-2 h-1.5 sm:h-2'
-                    }`} />
-                );
-              })}
-            </div>
           </div>
         </div>
       </div>
 
-      {/*  ПЯТЫЙ БЛОК (КОЛЛЕДЖИ ПАРТНЕРЫ) */}
-      <div className="relative min-h-screen flex flex-col p-3 sm:p-4 overflow-hidden" style={{ backgroundColor: '#EDE9FE' }}>
-
+      {/* ШЕСТОЙ БЛОК (ДОКУМЕНТЫ) */}
+      <div className="relative min-h-screen flex flex-col p-3 sm:p-4" style={{ backgroundColor: '#312C85' }}>
         <div className="relative z-10 flex justify-between items-center px-2 sm:px-4 md:px-8 py-2 sm:py-4">
-          <div>
-            <img src="chifra/logo_chifra_black.png" alt="Цифра" className="hidden sm:block w-12 sm:w-16 md:w-20 lg:w-24 h-auto" /> 
-          </div>
+          <div><img src="chifra/logo_chifra.png" alt="Цифра" className="hidden sm:block w-12 sm:w-16 md:w-20 lg:w-24 h-auto" /></div>
           <NavigationButtons />
         </div>
-
-        <div className="relative z-10 flex-1 flex justify-center items-center">
-          <div className="w-full max-w-[1400px] px-2 sm:px-4 md:px-8">
-            
-            <div className="flex flex-col sm:flex-row justify-between items-center sm:items-end mb-4 sm:mb-6 md:mb-8 gap-3 sm:gap-0">
-              <p className="font-bold text-2xl sm:text-3xl md:text-4xl lg:text-6xl font-sans text-center sm:text-left">
-                КОЛЛЕДЖИ ПАРТНЕРЫ
-              </p>
-              
-              <div className="flex gap-2">
-                <button onClick={prevCollege} className="bg-gray-100 hover:bg-gray-200 rounded-full flex items-center justify-center transition-colors"
-                  style={{ width: '70px', height: '24px' }}>
-                  <svg className="w-3 h-3 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                  </svg>
-                </button>
-                <button onClick={nextCollege} className="bg-gray-100 hover:bg-gray-200 rounded-full flex items-center justify-center transition-colors"
-                  style={{ width: '70px', height: '24px' }}>
-                  <svg className="w-3 h-3 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
-                </button>
-              </div>
-            </div>
-
-            <div className="relative flex justify-center items-center">
-              <div className="w-full lg:hidden">
-                <CollegeCard college={allColleges[currentCollegeIndex]} isActive={true} />
-              </div>
-              
-              <div className="hidden lg:grid lg:grid-cols-3 gap-6 items-stretch w-full">
-                <div className="transition-all duration-300">
-                  <CollegeCard college={allColleges[leftIndex]} isActive={false} />
-                </div>
-                <div className="transition-all duration-300 scale-105 z-10">
-                  <CollegeCard college={allColleges[currentCollegeIndex]} isActive={true} />
-                </div>
-                <div className="transition-all duration-300">
-                  <CollegeCard college={allColleges[rightIndex]} isActive={false} />
-                </div>
-              </div>
-            </div>
-
-            <div className="flex justify-center gap-2 sm:gap-3 mt-8 sm:mt-12">
-              {allColleges.map((_, idx) => (
-                <button key={idx} onClick={() => setCurrentCollegeIndex(idx)}
-                  className={`transition-all duration-300 rounded-full ${
-                    currentCollegeIndex === idx ? 'bg-black w-6 sm:w-8 h-1.5 sm:h-2' : 'bg-gray-400 hover:bg-gray-500 w-1.5 sm:w-2 h-1.5 sm:h-2'
-                  }`} />
-              ))}
-            </div>
-
-          </div>
-        </div>
-
-        <img src="chifra/lower_wave.png" alt="Волна" className="w-full absolute bottom-0 left-0 z-0 pointer-events-none opacity-100" />
-      </div>
-
-      {/*  ШЕСТОЙ БЛОК (ДОКУМЕНТЫ) */}
-      <div className="relative min-h-screen flex flex-col p-3 sm:p-4 overflow-hidden" style={{ backgroundColor: '#312C85' }}>
-
-        <div className="relative z-10 flex justify-between items-center px-2 sm:px-4 md:px-8 py-2 sm:py-4">
-          <div>
-            <img src="chifra/logo_chifra.png" alt="Цифра" className="hidden sm:block w-12 sm:w-16 md:w-20 lg:w-24 h-auto" /> 
-          </div>
-          <NavigationButtons />
-        </div>
-
         <div className="flex-1 flex flex-col items-center justify-center">
-          
-          <p className="font-bold text-xl sm:text-2xl md:text-3xl lg:text-4xl xl:text-6xl font-sans text-white my-4 sm:my-6 md:my-8 text-center px-4">
-            ДОКУМЕНТЫ
-          </p>
-
+          <p className="font-bold text-xl sm:text-2xl md:text-3xl lg:text-4xl xl:text-6xl font-sans text-white my-4 sm:my-6 md:my-8 text-center px-4">ДОКУМЕНТЫ</p>
           <div className="w-full px-2 sm:px-4 md:px-8">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 md:gap-6 justify-items-center">
               {[...Array(16)].map((_, idx) => {
@@ -662,7 +489,7 @@ export default function PasswordRecoveryEmail() {
                 return (
                   <div key={idx} className="bg-white/5 w-full max-w-[310px] h-[84px] sm:h-[94px] rounded-xl p-2 sm:p-3 flex items-center gap-2 sm:gap-3">
                     <img src={`chifra/${icon}`} alt={icon.replace(".png", "")} className="w-6 h-6 sm:w-8 sm:h-8" />
-                    <p className="text-white text-xs sm:text-sm leading-tight">Положение о проведении олимпиады</p>
+                    <p className="text-gray-100 text-xs sm:text-sm leading-tight">Положение о проведении олимпиады</p>
                   </div>
                 );
               })}
@@ -670,7 +497,6 @@ export default function PasswordRecoveryEmail() {
           </div>
         </div>
       </div>
-
     </div>
   );
 }

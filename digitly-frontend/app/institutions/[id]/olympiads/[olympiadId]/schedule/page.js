@@ -129,7 +129,7 @@ function Header({ olympiadTitle }) {
       </div>
       <div className='absolute bottom-4 left-0 right-0'>
         <p className='font-sans text-white text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-bold p-4 break-words'>
-          Расписание: {olympiadTitle || 'Олимпиада'}
+          Настройка расписания: {olympiadTitle || 'Олимпиада'}
         </p>
       </div>
     </div>
@@ -158,6 +158,57 @@ function DateTimePicker({ label, value, onChange, minDate, maxDate, error, requi
   );
 }
 
+// ========== КОМПОНЕНТ НАСТРОЙКИ НИЧЬИХ ==========
+function TieBreakerSettings({ value, onChange }) {
+  return (
+    <div className="border border-gray-200 rounded-xl p-5">
+      <h3 className="font-semibold text-gray-800 mb-4 flex items-center gap-2">
+        <svg className="w-5 h-5 text-[#8E51FF]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+        </svg>
+        Обработка ничьей
+      </h3>
+      <div className="space-y-3">
+        <label className="flex items-start gap-3 cursor-pointer">
+          <input
+            type="radio"
+            name="tieBreaker"
+            value="shared_place"
+            checked={value === 'shared_place'}
+            onChange={(e) => onChange(e.target.value)}
+            className="mt-1 w-4 h-4 text-[#8E51FF]"
+          />
+          <div>
+            <div className="font-medium text-gray-800">Одинаковые места</div>
+            <div className="text-sm text-gray-500">
+              Участники с одинаковым количеством баллов получают одинаковое место. Рекомендуемый вариант.
+            </div>
+          </div>
+        </label>
+        <label className="flex items-start gap-3 cursor-pointer">
+          <input
+            type="radio"
+            name="tieBreaker"
+            value="time_priority"
+            checked={value === 'time_priority'}
+            onChange={(e) => onChange(e.target.value)}
+            className="mt-1 w-4 h-4 text-[#8E51FF]"
+          />
+          <div>
+            <div className="font-medium text-gray-800">Преимущество завершившему раньше</div>
+            <div className="text-sm text-gray-500">
+              Если несколько участников набрали одинаковый балл, преимущество получает тот, кто завершил олимпиаду раньше.
+            </div>
+          </div>
+        </label>
+      </div>
+      <p className="text-xs text-gray-400 mt-3">
+        Настройка применяется при формировании итогового рейтинга временной олимпиады.
+      </p>
+    </div>
+  );
+}
+
 export default function OlympiadSchedulePage() {
   const router = useRouter();
   const params = useParams();
@@ -165,8 +216,10 @@ export default function OlympiadSchedulePage() {
   const olympiadId = params?.olympiadId;
   
   const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [olympiadTitle, setOlympiadTitle] = useState('');
   const [hasEssayQuestions, setHasEssayQuestions] = useState(false);
+  const [tieBreaker, setTieBreaker] = useState('shared_place');
   const [toast, setToast] = useState({ show: false, message: '', type: '' });
   
   const [schedule, setSchedule] = useState({
@@ -197,6 +250,7 @@ export default function OlympiadSchedulePage() {
       if (isTestMode) {
         setOlympiadTitle('Тестовая олимпиада');
         setHasEssayQuestions(true);
+        setTieBreaker('shared_place');
         setSchedule({
           registration_start_at: '2025-06-01T00:00',
           registration_end_at: '2025-06-10T23:59',
@@ -217,6 +271,7 @@ export default function OlympiadSchedulePage() {
         const data = await response.json();
         setOlympiadTitle(data.title);
         setHasEssayQuestions(data.has_essay_questions || false);
+        setTieBreaker(data.tie_breaker || 'shared_place');
         setSchedule({
           registration_start_at: data.registration_start_at || '',
           registration_end_at: data.registration_end_at || '',
@@ -263,6 +318,7 @@ export default function OlympiadSchedulePage() {
       }
     }
     
+    // Проверка логики периодов
     if (schedule.registration_start_at && schedule.registration_end_at) {
       const regStart = new Date(schedule.registration_start_at);
       const regEnd = new Date(schedule.registration_end_at);
@@ -311,43 +367,46 @@ export default function OlympiadSchedulePage() {
     e.preventDefault();
     if (!validateSchedule()) return;
     
-    setLoading(true);
+    setSaving(true);
     try {
       const token = localStorage.getItem('token');
       
       if (isTestMode) {
-        showToast('Расписание сохранено', 'success');
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        showToast('Настройки сохранены', 'success');
         setTimeout(() => {
-          // Перенаправляем на страницу вопросов
           router.push(`/institutions/${institutionId}/olympiads/${olympiadId}/questions?mock=true`);
         }, 1000);
-        setLoading(false);
+        setSaving(false);
         return;
       }
       
+      // Сохраняем расписание
       const response = await fetch(`/api/v1/olympiads/${olympiadId}/schedule`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(schedule),
+        body: JSON.stringify({
+          ...schedule,
+          tie_breaker: tieBreaker,
+        }),
       });
       
       if (response.ok) {
-        showToast('Расписание сохранено', 'success');
+        showToast('Настройки сохранены', 'success');
         setTimeout(() => {
-          // Перенаправляем на страницу вопросов
           router.push(`/institutions/${institutionId}/olympiads/${olympiadId}/questions`);
         }, 1000);
       } else {
         const data = await response.json();
-        throw new Error(data.message || 'Ошибка при сохранении расписания');
+        throw new Error(data.message || 'Ошибка при сохранении');
       }
     } catch (err) {
       showToast(err.message, 'error');
     } finally {
-      setLoading(false);
+      setSaving(false);
     }
   };
 
@@ -399,7 +458,7 @@ export default function OlympiadSchedulePage() {
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
               </svg>
-              Назад к олимпиаде
+              Назад
             </button>
           </div>
           
@@ -411,6 +470,7 @@ export default function OlympiadSchedulePage() {
             
             <form onSubmit={handleSubmit} className="p-6 space-y-8">
               
+              {/* Блок 1: Регистрация */}
               <div className="border border-gray-200 rounded-xl p-5">
                 <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
                   <span className="w-8 h-8 bg-blue-100 text-blue-700 rounded-full flex items-center justify-center text-sm">1</span>
@@ -438,6 +498,7 @@ export default function OlympiadSchedulePage() {
                 </p>
               </div>
               
+              {/* Блок 2: Участие */}
               <div className="border border-gray-200 rounded-xl p-5">
                 <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
                   <span className="w-8 h-8 bg-green-100 text-green-700 rounded-full flex items-center justify-center text-sm">2</span>
@@ -466,6 +527,7 @@ export default function OlympiadSchedulePage() {
                 </p>
               </div>
               
+              {/* Блок 3: Проверка эссе (только если есть эссе) */}
               {hasEssayQuestions && (
                 <div className="border border-gray-200 rounded-xl p-5">
                   <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
@@ -496,6 +558,13 @@ export default function OlympiadSchedulePage() {
                 </div>
               )}
               
+              {/* Блок 4: Обработка ничьих */}
+              <TieBreakerSettings
+                value={tieBreaker}
+                onChange={setTieBreaker}
+              />
+              
+              {/* Визуализация timeline */}
               <div className="bg-gray-50 rounded-xl p-5">
                 <h3 className="text-sm font-medium text-gray-700 mb-3">Хронология событий:</h3>
                 <div className="space-y-2 text-sm">
@@ -528,13 +597,20 @@ export default function OlympiadSchedulePage() {
                 </div>
               </div>
               
+              {/* Кнопки */}
               <div className="flex gap-4 pt-4">
                 <button
                   type="submit"
-                  disabled={loading}
+                  disabled={saving}
                   className="bg-gradient-to-r from-[#312C85] to-[#8E51FF] hover:from-[#8E51FF] hover:to-[#312C85] text-white px-6 py-2.5 rounded-lg font-medium transition-all disabled:opacity-50 flex items-center gap-2"
                 >
-                  Сохранить расписание
+                  {saving ? (
+                    <svg className="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                  ) : (
+                    "Сохранить и продолжить"
+                  )}
                 </button>
                 <button
                   type="button"

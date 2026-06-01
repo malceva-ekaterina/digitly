@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 
 // КОМПОНЕНТ КНОПКИ ПРОФИЛЯ
@@ -130,7 +130,7 @@ function Header() {
   );
 }
 
-//  ТЕСТОВЫЕ ДАННЫЕ
+// ТЕСТОВЫЕ ДАННЫЕ
 const MOCK_INSTITUTIONS = [
   {
     id: 1,
@@ -138,6 +138,7 @@ const MOCK_INSTITUTIONS = [
     inn: "6668012345",
     website: "https://nttek.ru",
     status: "approved",
+    role: "admin",
     created_at: "2025-01-15T10:30:00.000Z",
     rejection_reason: null
   },
@@ -147,6 +148,7 @@ const MOCK_INSTITUTIONS = [
     inn: "772312345678",
     website: "https://mkbt.msk.ru",
     status: "pending",
+    role: "methodist",
     created_at: "2025-02-20T14:45:00.000Z",
     rejection_reason: null
   },
@@ -156,6 +158,7 @@ const MOCK_INSTITUTIONS = [
     inn: "1655123456",
     website: "https://kpk-kazan.ru",
     status: "rejected",
+    role: "admin",
     created_at: "2025-03-01T09:15:00.000Z",
     rejection_reason: "Не предоставлен полный пакет документов"
   }
@@ -163,10 +166,10 @@ const MOCK_INSTITUTIONS = [
 
 export default function MyInstitutionsPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [institutions, setInstitutions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [toast, setToast] = useState({ show: false, message: '', type: '' });
-  const [useMockData, setUseMockData] = useState(true);
 
   const showToast = (message, type = 'success') => {
     setToast({ show: true, message, type });
@@ -174,17 +177,17 @@ export default function MyInstitutionsPage() {
   };
 
   useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const showMock = urlParams.get('mock') === 'true';
-    setUseMockData(showMock);
+    // Проверяем параметр mock в URL
+    const isMock = searchParams.get('mock') === 'true';
     
-    if (showMock) {
+    if (isMock) {
+      // Используем тестовые данные
       setInstitutions(MOCK_INSTITUTIONS);
       setLoading(false);
     } else {
       fetchInstitutions();
     }
-  }, []);
+  }, [searchParams]);
 
   const fetchInstitutions = async () => {
     try {
@@ -197,9 +200,13 @@ export default function MyInstitutionsPage() {
         setInstitutions(data);
       } else if (response.status === 401) {
         router.push('/login');
+      } else {
+        // Если API не работает, используем тестовые данные
+        setInstitutions(MOCK_INSTITUTIONS);
       }
     } catch (err) {
       console.error('Ошибка загрузки организаций:', err);
+      // При ошибке используем тестовые данные
       setInstitutions(MOCK_INSTITUTIONS);
     } finally {
       setLoading(false);
@@ -209,11 +216,11 @@ export default function MyInstitutionsPage() {
   const getStatusBadge = (status) => {
     switch (status) {
       case 'pending':
-        return <span className="px-2 py-1 text-xs rounded-full bg-yellow-100 text-yellow-800"> На модерации</span>;
+        return <span className="px-2 py-1 text-xs rounded-full bg-yellow-100 text-yellow-800">На модерации</span>;
       case 'approved':
-        return <span className="px-2 py-1 text-xs rounded-full bg-green-100 text-green-800"> Активна</span>;
+        return <span className="px-2 py-1 text-xs rounded-full bg-green-100 text-green-800">Активна</span>;
       case 'rejected':
-        return <span className="px-2 py-1 text-xs rounded-full bg-red-100 text-red-800"> Отклонена</span>;
+        return <span className="px-2 py-1 text-xs rounded-full bg-red-100 text-red-800">Отклонена</span>;
       default:
         return <span className="px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-800">{status}</span>;
     }
@@ -246,10 +253,8 @@ export default function MyInstitutionsPage() {
       <div className="flex-1 bg-gray-100 py-10 px-4">
         <div className="max-w-6xl mx-auto">
           
-          {/* КОНТЕНТ */}
           <div className="flex flex-col md:flex-row gap-8">
             
-            {/* Основной контент */}
             <div className="flex-1">
               <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
                 <div className="border-b border-gray-200 px-6 py-4 flex justify-between items-center flex-wrap gap-4">

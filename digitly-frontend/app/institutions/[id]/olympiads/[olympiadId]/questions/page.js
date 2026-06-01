@@ -709,6 +709,11 @@ export default function OlympiadQuestionsPage() {
   };
 
   const isReadOnly = olympiadStatus !== 'draft';
+  const isPendingModeration = olympiadStatus === 'pending_moderation';
+
+  const goToDashboard = () => {
+    router.push(`/institutions/${institutionId}/dashboard`);
+  };
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -726,15 +731,28 @@ export default function OlympiadQuestionsPage() {
         <div className="max-w-6xl mx-auto">
           
           <div className="mb-4 flex justify-between items-center flex-wrap gap-2">
-            <button
-              onClick={() => router.back()}
-              className="text-[#8E51FF] hover:underline inline-flex items-center gap-1 text-sm"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-              </svg>
-              Назад к олимпиаде
-            </button>
+            {/* Кнопка "Назад к олимпиаде"*/}
+            {!isPendingModeration && (
+              <button
+                onClick={() => router.back()}
+                className="text-[#8E51FF] hover:underline inline-flex items-center gap-1 text-sm"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                </svg>
+                Назад к олимпиаде
+              </button>
+            )}
+            
+            {isPendingModeration && (
+              <button
+                onClick={goToDashboard}
+                className="bg-gradient-to-r from-[#312C85] to-[#8E51FF] hover:from-[#8E51FF] hover:to-[#312C85] text-white px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2"
+              >
+                На главную ОО
+              </button>
+            )}
+            
             {!isReadOnly && (
               <div className="flex gap-2">
                 <button
@@ -876,6 +894,9 @@ export default function OlympiadQuestionsPage() {
                   </svg>
                 ) : (
                   <>
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
                     Отправить на модерацию
                   </>
                 )}
@@ -883,10 +904,23 @@ export default function OlympiadQuestionsPage() {
             </div>
           )}
 
-          {/* Статус после отправки */}
+        
           {olympiadStatus === 'pending_moderation' && (
-            <div className="mt-8 p-4 rounded-xl text-center">
-              <p>Олимпиада отправлена на модерацию. Вы не можете редактировать вопросы до решения модератора.</p>
+            <div className="mt-8 p-6 bg-blue-50 border border-blue-200 rounded-xl text-center">
+              <div className="flex flex-col items-center gap-4">
+                <p className="text-blue-800 font-medium text-lg">
+                  Олимпиада отправлена на модерацию.
+                </p>
+                <p className="text-blue-700">
+                  Вы не можете редактировать вопросы до решения модератора.
+                </p>
+                <button
+                  onClick={goToDashboard}
+                  className="mt-4 bg-gradient-to-r from-[#312C85] to-[#8E51FF] hover:from-[#8E51FF] hover:to-[#312C85] text-white px-6 py-2.5 rounded-lg text-sm font-medium transition-all flex items-center gap-2"
+                >
+                  На главную ОО
+                </button>
+              </div>
             </div>
           )}
 
@@ -923,6 +957,9 @@ export default function OlympiadQuestionsPage() {
                   onClick={confirmSubmitForModeration}
                   className="bg-gradient-to-r from-[#312C85] to-[#8E51FF] hover:from-[#8E51FF] hover:to-[#312C85] text-white px-4 py-2 rounded-lg transition flex items-center gap-2"
                 >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
                   Отправить
                 </button>
               </div>
