@@ -2,10 +2,8 @@
 import { useState, useEffect, useRef } from "react";
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { createPortal } from 'react-dom';
-import { z } from "zod";
 
-//  МАССИВЫ С ДАННЫМИ 
+// ========== МАССИВЫ С ДАННЫМИ ==========
 const allReviews = [
   {
     id: 1,
@@ -13,7 +11,7 @@ const allReviews = [
     role: "Гость",
     stars: 4,
     text: "Сайт просто огонь, все удобно и олимпиады интересные, все очень-очень круто!",
-    avatar: "chifra/avatar1.png"
+    avatar: "/chifra/avatar1.png"
   },
   {
     id: 2,
@@ -21,7 +19,7 @@ const allReviews = [
     role: "Гость",
     stars: 4,
     text: "Мне все очень нравится, спасибо вам за такую замечательную платформу, я очень рад быть ее частью.",
-    avatar: "chifra/avatar2.png"
+    avatar: "/chifra/avatar2.png"
   },
   {
     id: 3,
@@ -29,7 +27,7 @@ const allReviews = [
     role: "Гость",
     stars: 5,
     text: "Все на высоте! Я люблю олимпиады и методический киоск, ураааа, все круто, супер!",
-    avatar: "chifra/avatar3.png"
+    avatar: "/chifra/avatar3.png"
   },
   {
     id: 4,
@@ -37,7 +35,7 @@ const allReviews = [
     role: "Участник",
     stars: 5,
     text: "Очень удобная платформа, много полезных материалов. Спасибо разработчикам!",
-    avatar: "chifra/avatar4.png"
+    avatar: "/chifra/avatar4.png"
   },
   {
     id: 5,
@@ -45,7 +43,7 @@ const allReviews = [
     role: "Участник",
     stars: 5,
     text: "Участвую во всех олимпиадах, всегда интересные задания. Рекомендую!",
-    avatar: "chifra/avatar5.png"
+    avatar: "/chifra/avatar5.png"
   }
 ];
 
@@ -87,6 +85,7 @@ const allColleges = [
   }
 ];
 
+// ========== КОМПОНЕНТ КАРТОЧКИ КОЛЛЕДЖА ==========
 function CollegeCard({ college, isActive = false }) {
   return (
     <div 
@@ -128,8 +127,7 @@ function CollegeCard({ college, isActive = false }) {
   );
 }
 
-
-//  ИСПРАВЛЕННЫЙ КОМПОНЕНТ КНОПКИ ПРОФИЛЯ 
+// ========== КОМПОНЕНТ КНОПКИ ПРОФИЛЯ ==========
 function ProfileButton() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [userName, setUserName] = useState('');
@@ -139,7 +137,6 @@ function ProfileButton() {
   const buttonRef = useRef(null);
   const router = useRouter();
 
-  // Получение CSRF токена
   const fetchCsrfToken = async () => {
     try {
       await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000'}/sanctum/csrf-cookie`, {
@@ -150,7 +147,6 @@ function ProfileButton() {
     }
   };
 
-  // Получение текущего пользователя с сервера
   const fetchCurrentUser = async () => {
     try {
       await fetchCsrfToken();
@@ -168,7 +164,6 @@ function ProfileButton() {
         const userData = await response.json();
         setIsAuthenticated(true);
         setUserName(userData.name || userData.fullname || userData.email?.split('@')[0] || 'Пользователь');
-        // Сохраняем в localStorage только для отображения, не для проверки авторизации!
         localStorage.setItem('user', JSON.stringify(userData));
       } else if (response.status === 401) {
         setIsAuthenticated(false);
@@ -277,37 +272,25 @@ function ProfileButton() {
   );
 }
 
-// ========== КОМПОНЕНТ ВЕРХНЕЙ ПАНЕЛИ ==========
-function Header() {
+// ========== КОМПОНЕНТ НАВИГАЦИОННЫХ КНОПОК ==========
+function NavigationButtons() {
   return (
-    <div className="w-full h-[278px] relative" style={{ background: 'linear-gradient(135deg, #312C85, #8E51FF)'}}>
-      <div className="absolute top-4 left-0 right-0 z-20 flex justify-between items-center px-4 sm:px-6 md:px-8">
-        <div>
-          <Link href="/">
-            <img src="/chifra/logo_chifra.png" alt="Цифра" className="hidden sm:block w-12 sm:w-16 md:w-20 lg:w-24 h-auto cursor-pointer" />
-          </Link>
-        </div>
-        <div className="flex items-center gap-1.5 sm:gap-2 md:gap-3 lg:gap-4">
-          <Link href="/olympiads" className="bg-white rounded-xl flex items-center justify-center gap-0.5 sm:gap-1 md:gap-1.5 font-sans font-medium shadow-sm whitespace-nowrap text-[13px] sm:text-sm md:text-base lg:text-[15px] px-3 sm:px-4 md:px-4 lg:px-5 py-1.5 sm:py-1.5 md:py-2 lg:py-1.5 hover:bg-gray-50 transition-colors">
-            <span>Олимпиады</span>
-            <img src="/chifra/arrow.png" alt="стрелка" className="w-3 h-3 sm:w-3.5 sm:h-3.5 md:w-4 md:h-4 lg:w-4 lg:h-4" />
-          </Link>
-          <Link href="/methodics" className="bg-white rounded-xl flex items-center justify-center gap-0.5 sm:gap-1 md:gap-1.5 font-sans font-medium shadow-sm whitespace-nowrap text-[13px] sm:text-sm md:text-base lg:text-[15px] px-3 sm:px-4 md:px-4 lg:px-5 py-1.5 sm:py-1.5 md:py-2 lg:py-1.5 hover:bg-gray-50 transition-colors">
-            <span>Методочки</span>
-            <img src="/chifra/arrow.png" alt="стрелка" className="w-3 h-3 sm:w-3.5 sm:h-3.5 md:w-4 md:h-4 lg:w-4 lg:h-4" />
-          </Link>
-          <ProfileButton />
-        </div>
-      </div>
-      <div className='absolute bottom-4 left-0 right-0'>
-        <p className='font-sans text-white text-5xl sm:text-6xl md:text-7xl font-bold p-4'>Личный кабинет</p>
-      </div>
+    <div className="flex items-center gap-1.5 sm:gap-2 md:gap-3 lg:gap-4">
+      <Link href="/olympiads" className="bg-white rounded-xl flex items-center justify-center gap-0.5 sm:gap-1 md:gap-1.5 font-sans font-medium shadow-sm whitespace-nowrap text-[13px] sm:text-sm md:text-base lg:text-[15px] px-3 sm:px-4 md:px-4 lg:px-5 py-1.5 sm:py-1.5 md:py-2 lg:py-1.5 hover:bg-gray-50 transition-colors">
+        <span className="text-gray-700">Олимпиады</span>
+        <img src="/chifra/arrow.png" alt="стрелка" className="w-3 h-3 sm:w-3.5 sm:h-3.5 md:w-4 md:h-4 lg:w-4 lg:h-4" />
+      </Link>
+      <Link href="/methodics" className="bg-white rounded-xl flex items-center justify-center gap-0.5 sm:gap-1 md:gap-1.5 font-sans font-medium shadow-sm whitespace-nowrap text-[13px] sm:text-sm md:text-base lg:text-[15px] px-3 sm:px-4 md:px-4 lg:px-5 py-1.5 sm:py-1.5 md:py-2 lg:py-1.5 hover:bg-gray-50 transition-colors">
+        <span className="text-gray-700">Методочки</span>
+        <img src="/chifra/arrow.png" alt="стрелка" className="w-3 h-3 sm:w-3.5 sm:h-3.5 md:w-4 md:h-4 lg:w-4 lg:h-4" />
+      </Link>
+      <ProfileButton />
     </div>
   );
 }
 
-//  ОСНОВНОЙ КОМПОНЕНТ 
-export default function PasswordRecoveryEmail() {
+// ========== ОСНОВНОЙ КОМПОНЕНТ ГЛАВНОЙ СТРАНИЦЫ ==========
+export default function HomePage() {
   const [currentReviewIndex, setCurrentReviewIndex] = useState(0);
   const [currentCollegeIndex, setCurrentCollegeIndex] = useState(0);
   const reviewsToShow = 3;
@@ -319,6 +302,7 @@ export default function PasswordRecoveryEmail() {
       setCurrentReviewIndex(0);
     }
   };
+  
   const prevReviews = () => {
     if (currentReviewIndex > 0) {
       setCurrentReviewIndex(currentReviewIndex - 1);
@@ -326,14 +310,17 @@ export default function PasswordRecoveryEmail() {
       setCurrentReviewIndex(Math.max(0, allReviews.length - reviewsToShow));
     }
   };
+  
   const visibleReviews = allReviews.slice(currentReviewIndex, currentReviewIndex + reviewsToShow);
 
   const nextCollege = () => {
     setCurrentCollegeIndex((prev) => (prev + 1) % allColleges.length);
   };
+  
   const prevCollege = () => {
     setCurrentCollegeIndex((prev) => (prev - 1 + allColleges.length) % allColleges.length);
   };
+  
   const leftIndex = (currentCollegeIndex - 1 + allColleges.length) % allColleges.length;
   const rightIndex = (currentCollegeIndex + 1) % allColleges.length;
 
@@ -341,20 +328,20 @@ export default function PasswordRecoveryEmail() {
     <div>
       {/* ПЕРВЫЙ БЛОК (ГЛАВНЫЙ ЭКРАН) */}
       <div className="min-h-screen bg-cover bg-center bg-no-repeat relative" style={{ backgroundImage: "url('/main_page.png')" }}>
-        <div className="absolute inset-0 bg-cover bg-center bg-no-repeat" style={{ backgroundImage: "url('chifra/binary_001.png')" }} />
+        <div className="absolute inset-0 bg-cover bg-center bg-no-repeat" style={{ backgroundImage: "url('/chifra/binary_001.png')" }} />
         <div className="absolute top-4 left-0 right-0 z-20 flex justify-between items-center px-4 sm:px-6 md:px-8">
-          <div><img src="chifra/logo_chifra.png" alt="Цифра" className="hidden sm:block w-12 sm:w-16 md:w-20 lg:w-24 h-auto" /></div>
+          <div><img src="/chifra/logo_chifra.png" alt="Цифра" className="hidden sm:block w-12 sm:w-16 md:w-20 lg:w-24 h-auto" /></div>
           <NavigationButtons />
         </div>
         <div className="relative z-10 flex items-center justify-center min-h-screen px-4">
-          <img src="chifra/chifra_olympiad.png" alt="Цифра Центр онлайн олимпиад" className="w-full max-w-[90%] sm:max-w-[80%] md:max-w-[717px] h-auto px-2 sm:px-4" />
+          <img src="/chifra/chifra_olympiad.png" alt="Цифра Центр онлайн олимпиад" className="w-full max-w-[90%] sm:max-w-[80%] md:max-w-[717px] h-auto px-2 sm:px-4" />
         </div>
       </div>
 
       {/* ВТОРОЙ БЛОК (ПРЕИМУЩЕСТВА) */}
       <div className="min-h-screen flex flex-col p-4 sm:p-6 md:p-8" style={{ backgroundColor: '#EDE9FE' }}>
         <div className="flex justify-between items-center px-2 sm:px-4 md:px-8 py-2 sm:py-4">
-          <div><img src="chifra/logo_chifra_black.png" alt="Цифра" className="hidden sm:block w-12 sm:w-16 md:w-20 lg:w-24 h-auto" /></div>
+          <div><img src="/chifra/logo_chifra_black.png" alt="Цифра" className="hidden sm:block w-12 sm:w-16 md:w-20 lg:w-24 h-auto" /></div>
           <NavigationButtons />
         </div>
         <div className="flex-1 flex justify-center items-center">
@@ -362,9 +349,9 @@ export default function PasswordRecoveryEmail() {
             <p className="font-bold text-2xl sm:text-3xl md:text-4xl lg:text-6xl mb-4 sm:mb-6 md:mb-8 font-sans text-center lg:text-left text-gray-800">ПРЕИМУЩЕСТВА</p>
             <div className="flex flex-col xl:flex-row gap-6 sm:gap-8 font-sans">
               <div className="relative bg-white rounded-xl flex flex-col justify-end flex-1 min-w-[280px] overflow-hidden" style={{ height: 'auto', minHeight: '400px' }}>
-                <img src="chifra/binary_003.png" alt="binary bg" className="absolute inset-0 w-full h-full object-cover opacity-20 z-0 pointer-events-none" />
+                <img src="/chifra/binary_003.png" alt="binary bg" className="absolute inset-0 w-full h-full object-cover opacity-20 z-0 pointer-events-none" />
                 <div className="absolute top-4 right-4 bg-violet-500 rounded-full w-10 h-10 sm:w-12 sm:h-12 md:w-16 md:h-16 flex items-center justify-center z-10">
-                  <img src="chifra/check_mark.png" alt="галочка" className="w-5 h-5 sm:w-6 sm:h-6 md:w-8 md:h-8" />
+                  <img src="/chifra/check_mark.png" alt="галочка" className="w-5 h-5 sm:w-6 sm:h-6 md:w-8 md:h-8" />
                 </div>
                 <div className="relative z-10 p-4 sm:p-6">
                   <p className="font-bold text-gray-800 text-lg sm:text-xl md:text-2xl lg:text-3xl mb-2 font-sans">Сотрудничество</p>
@@ -373,9 +360,9 @@ export default function PasswordRecoveryEmail() {
               </div>
               <div className="flex flex-col gap-6 sm:gap-8 flex-1 min-w-[280px]">
                 <div className="relative bg-white rounded-xl flex flex-col justify-end overflow-hidden" style={{ height: 'auto', minHeight: '200px' }}>
-                  <img src="chifra/binary_005.png" alt="binary bg" className="absolute inset-0 object-cover opacity-70 z-0 pointer-events-none" />
+                  <img src="/chifra/binary_005.png" alt="binary bg" className="absolute inset-0 object-cover opacity-70 z-0 pointer-events-none" />
                   <div className="absolute top-4 right-4 bg-violet-500 rounded-full w-10 h-10 sm:w-12 sm:h-12 md:w-16 md:h-16 flex items-center justify-center z-10">
-                    <img src="chifra/check_mark.png" alt="галочка" className="w-5 h-5 sm:w-6 sm:h-6 md:w-8 md:h-8" />
+                    <img src="/chifra/check_mark.png" alt="галочка" className="w-5 h-5 sm:w-6 sm:h-6 md:w-8 md:h-8" />
                   </div>
                   <div className="relative z-10 p-4 sm:p-6">
                     <p className="font-bold text-gray-800 text-lg sm:text-xl md:text-2xl lg:text-3xl mb-2 font-sans">Нет ограничений</p>
@@ -383,9 +370,9 @@ export default function PasswordRecoveryEmail() {
                   </div>
                 </div>
                 <div className="relative bg-white rounded-xl flex flex-col justify-end overflow-hidden" style={{ height: 'auto', minHeight: '200px' }}>
-                  <img src="chifra/binary_004.png" alt="binary bg" className="absolute inset-0 w-full h-full object-cover opacity-70 z-0 pointer-events-none" />
+                  <img src="/chifra/binary_004.png" alt="binary bg" className="absolute inset-0 w-full h-full object-cover opacity-70 z-0 pointer-events-none" />
                   <div className="absolute top-4 right-4 bg-violet-500 rounded-full w-10 h-10 sm:w-12 sm:h-12 md:w-16 md:h-16 flex items-center justify-center z-10">
-                    <img src="chifra/check_mark.png" alt="галочка" className="w-5 h-5 sm:w-6 sm:h-6 md:w-8 md:h-8" />
+                    <img src="/chifra/check_mark.png" alt="галочка" className="w-5 h-5 sm:w-6 sm:h-6 md:w-8 md:h-8" />
                   </div>
                   <div className="relative z-10 p-4 sm:p-6">
                     <p className="font-bold text-gray-800 text-lg sm:text-xl md:text-2xl lg:text-3xl mb-2">Легкость</p>
@@ -400,30 +387,30 @@ export default function PasswordRecoveryEmail() {
 
       {/* ТРЕТИЙ БЛОК (ЦИФРЫ) */}
       <div className="min-h-screen bg-cover bg-center bg-no-repeat relative" style={{ backgroundImage: "url('/main_page.png')" }}>
-        <div className="absolute inset-0 bg-contain bg-center bg-no-repeat m-4" style={{ backgroundImage: "url('chifra/binary_002.png')" }} />
+        <div className="absolute inset-0 bg-contain bg-center bg-no-repeat m-4" style={{ backgroundImage: "url('/chifra/binary_002.png')" }} />
         <div className="absolute top-4 left-0 right-0 z-20 flex justify-between items-center px-4 sm:px-6 md:px-8">
-          <div><img src="chifra/logo_chifra.png" alt="Цифра" className="hidden sm:block w-12 sm:w-16 md:w-20 lg:w-24 h-auto" /></div>
+          <div><img src="/chifra/logo_chifra.png" alt="Цифра" className="hidden sm:block w-12 sm:w-16 md:w-20 lg:w-24 h-auto" /></div>
           <NavigationButtons />
         </div>
         <div className="relative z-10 flex flex-col items-center justify-center min-h-screen px-4 pt-20 pb-12">
           <div className="flex flex-wrap justify-center gap-6 sm:gap-8 text-white">
             <div className="rounded-xl m-2 sm:m-4 flex flex-col justify-center items-center backdrop-blur-sm w-[calc(100%-1rem)] sm:w-[280px]" style={{ height: '186px', background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.85), rgba(168, 85, 247, 0.85))' }}>
-              <img src="chifra/smailey_people.png" alt="стрелка" className="w-6 h-6 sm:w-8 sm:h-8 mt-3 sm:mt-4" />
+              <img src="/chifra/smailey_people.png" alt="стрелка" className="w-6 h-6 sm:w-8 sm:h-8 mt-3 sm:mt-4" />
               <p className="mt-2 sm:mt-4 font-sans text-white text-xl sm:text-3xl md:text-4xl lg:text-5xl">29430</p>
               <p className="mt-1 sm:mt-4 font-sans text-white text-xs sm:text-base">Студентов</p>
             </div>
             <div className="rounded-xl m-2 sm:m-4 flex flex-col justify-center items-center backdrop-blur-sm w-[calc(100%-1rem)] sm:w-[280px]" style={{ height: '186px', background: 'linear-gradient(135deg, rgba(168, 85, 247, 0.85), rgba(126, 34, 206, 0.85))' }}>
-              <img src="chifra/smailey_check_paper.png" alt="стрелка" className="w-6 h-6 sm:w-8 sm:h-8 mt-3 sm:mt-4" />
+              <img src="/chifra/smailey_check_paper.png" alt="стрелка" className="w-6 h-6 sm:w-8 sm:h-8 mt-3 sm:mt-4" />
               <p className="mt-2 sm:mt-4 font-sans text-white text-xl sm:text-3xl md:text-4xl lg:text-5xl">2389</p>
               <p className="mt-1 sm:mt-4 font-sans text-white text-xs sm:text-base">Олимпиад</p>
             </div>
             <div className="rounded-xl m-2 sm:m-4 flex flex-col justify-center items-center backdrop-blur-sm w-[calc(100%-1rem)] sm:w-[280px]" style={{ height: '186px', background: 'linear-gradient(135deg, rgba(126, 34, 206, 0.85), rgba(88, 28, 135, 0.85))' }}>
-              <img src="chifra/smailey_handsnake.png" alt="стрелка" className="w-6 h-6 sm:w-8 sm:h-8 mt-3 sm:mt-4" />
+              <img src="/chifra/smailey_handsnake.png" alt="стрелка" className="w-6 h-6 sm:w-8 sm:h-8 mt-3 sm:mt-4" />
               <p className="mt-2 sm:mt-4 font-sans text-white text-xl sm:text-3xl md:text-4xl lg:text-5xl">29</p>
               <p className="mt-1 sm:mt-4 font-sans text-white text-xs sm:text-base">Партнеров</p>
             </div>
             <div className="rounded-xl m-2 sm:m-4 flex flex-col justify-center items-center backdrop-blur-sm w-[calc(100%-1rem)] sm:w-[280px]" style={{ height: '186px', background: 'linear-gradient(135deg, rgba(88, 28, 135, 0.85), rgba(76, 29, 149, 0.85), rgba(139, 92, 246, 0.7))' }}>
-              <img src="chifra/smailey_heart.png" alt="стрелка" className="w-6 h-6 sm:w-8 sm:h-8 mt-3 sm:mt-4" />
+              <img src="/chifra/smailey_heart.png" alt="стрелка" className="w-6 h-6 sm:w-8 sm:h-8 mt-3 sm:mt-4" />
               <p className="mt-2 sm:mt-4 font-sans text-white text-xl sm:text-3xl md:text-4xl lg:text-5xl">10</p>
               <p className="mt-1 sm:mt-4 font-sans text-white text-xs sm:text-base">Лет вместе</p>
             </div>
@@ -433,12 +420,12 @@ export default function PasswordRecoveryEmail() {
 
       {/* ЧЕТВЕРТЫЙ БЛОК (ОТЗЫВЫ) */}
       <div className="relative min-h-screen flex flex-col p-3 sm:p-4" style={{ backgroundColor: '#EDE9FE' }}>
-        <img src="chifra/reviews1.png" alt="" className="absolute bottom-0 left-0 w-24 sm:w-auto opacity-0 sm:opacity-100 pointer-events-none" style={{ zIndex: 0 }} />
-        <img src="chifra/reviews2.png" alt="" className="absolute bottom-0 right-0 w-24 sm:w-auto opacity-0 sm:opacity-100 pointer-events-none" style={{ zIndex: 0 }} />
+        <img src="/chifra/reviews1.png" alt="" className="absolute bottom-0 left-0 w-24 sm:w-auto opacity-0 sm:opacity-100 pointer-events-none" style={{ zIndex: 0 }} />
+        <img src="/chifra/reviews2.png" alt="" className="absolute bottom-0 right-0 w-24 sm:w-auto opacity-0 sm:opacity-100 pointer-events-none" style={{ zIndex: 0 }} />
 
         <div className="relative flex flex-col justify-center min-h-screen" style={{ zIndex: 1 }}>
           <div className="flex justify-between items-center px-2 sm:px-4 md:px-8 py-2 sm:py-4">
-            <div><img src="chifra/logo_chifra_black.png" alt="Цифра" className="hidden sm:block w-12 sm:w-16 md:w-20 lg:w-24 h-auto" /></div>
+            <div><img src="/chifra/logo_chifra_black.png" alt="Цифра" className="hidden sm:block w-12 sm:w-16 md:w-20 lg:w-24 h-auto" /></div>
             <NavigationButtons />
           </div>
           <div className="flex-1 flex justify-center items-center">
@@ -458,7 +445,7 @@ export default function PasswordRecoveryEmail() {
                 <div className="flex flex-wrap justify-center gap-6 sm:gap-8 md:gap-10">
                   {visibleReviews.map((review) => (
                     <div key={review.id} className="flex flex-col w-full sm:w-[320px] md:w-[350px] lg:w-[380px] min-h-[300px] sm:min-h-[320px]">
-                      <img src="chifra/forging.png" alt="кавычки" className="w-8 h-8 sm:w-10 sm:h-10 mb-3 sm:mb-4" />
+                      <img src="/chifra/forging.png" alt="кавычки" className="w-8 h-8 sm:w-10 sm:h-10 mb-3 sm:mb-4" />
                       <p className="text-gray-700 text-sm sm:text-base md:text-lg leading-relaxed flex-1 mb-4 sm:mb-6 line-clamp-4">{review.text}</p>
                       <div className="flex items-center gap-3 sm:gap-4 mt-auto">
                         <div className="w-10 h-10 sm:w-14 sm:h-14 bg-gray-300 rounded-full overflow-hidden"><img src={review.avatar} alt="аватар" className="w-full h-full object-cover" /></div>
@@ -487,11 +474,11 @@ export default function PasswordRecoveryEmail() {
 
       {/* ПЯТЫЙ БЛОК (КОЛЛЕДЖИ ПАРТНЕРЫ) */}
       <div className="relative min-h-screen flex flex-col p-3 sm:p-4" style={{ backgroundColor: '#EDE9FE' }}>
-        <img src="chifra/lower_wave.png" alt="Волна" className="absolute bottom-0 left-0 w-full pointer-events-none" style={{ zIndex: 0 }} />
+        <img src="/chifra/lower_wave.png" alt="Волна" className="absolute bottom-0 left-0 w-full pointer-events-none" style={{ zIndex: 0 }} />
         
         <div className="relative" style={{ zIndex: 1 }}>
           <div className="flex justify-between items-center px-2 sm:px-4 md:px-8 py-2 sm:py-4">
-            <div><img src="chifra/logo_chifra_black.png" alt="Цифра" className="hidden sm:block w-12 sm:w-16 md:w-20 lg:w-24 h-auto" /></div>
+            <div><img src="/chifra/logo_chifra_black.png" alt="Цифра" className="hidden sm:block w-12 sm:w-16 md:w-20 lg:w-24 h-auto" /></div>
             <NavigationButtons />
           </div>
           <div className="flex-1 flex justify-center items-center">
@@ -530,7 +517,7 @@ export default function PasswordRecoveryEmail() {
       {/* ШЕСТОЙ БЛОК (ДОКУМЕНТЫ) */}
       <div className="relative min-h-screen flex flex-col p-3 sm:p-4" style={{ backgroundColor: '#312C85' }}>
         <div className="relative z-10 flex justify-between items-center px-2 sm:px-4 md:px-8 py-2 sm:py-4">
-          <div><img src="chifra/logo_chifra.png" alt="Цифра" className="hidden sm:block w-12 sm:w-16 md:w-20 lg:w-24 h-auto" /></div>
+          <div><img src="/chifra/logo_chifra.png" alt="Цифра" className="hidden sm:block w-12 sm:w-16 md:w-20 lg:w-24 h-auto" /></div>
           <NavigationButtons />
         </div>
         <div className="flex-1 flex flex-col items-center justify-center">
@@ -542,7 +529,7 @@ export default function PasswordRecoveryEmail() {
                 const icon = icons[idx % 4];
                 return (
                   <div key={idx} className="bg-white/5 w-full max-w-[310px] h-[84px] sm:h-[94px] rounded-xl p-2 sm:p-3 flex items-center gap-2 sm:gap-3">
-                    <img src={`chifra/${icon}`} alt={icon.replace(".png", "")} className="w-6 h-6 sm:w-8 sm:h-8" />
+                    <img src={`/chifra/${icon}`} alt={icon.replace(".png", "")} className="w-6 h-6 sm:w-8 sm:h-8" />
                     <p className="text-gray-100 text-xs sm:text-sm leading-tight">Положение о проведении олимпиады</p>
                   </div>
                 );
