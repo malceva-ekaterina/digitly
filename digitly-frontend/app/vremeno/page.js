@@ -126,7 +126,7 @@ function CollegeCard({ college, isActive = false }) {
   );
 }
 
-//  ИСПРАВЛЕННЫЙ КОМПОНЕНТ КНОПКИ ПРОФИЛЯ 
+// КОМПОНЕНТ КНОПКИ ПРОФИЛЯ 
 function ProfileButton() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [userName, setUserName] = useState('');
@@ -235,7 +235,7 @@ function ProfileButton() {
   );
 }
 
-// Компонент навигации (один на всю страницу)
+// Компонент навигации 
 function NavigationButtons() {
   return (
     <div className="flex items-center gap-1.5 sm:gap-2 md:gap-3 lg:gap-4">

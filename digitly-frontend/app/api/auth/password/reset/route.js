@@ -20,4 +20,4 @@ export async function POST(request) {
   } catch (error) {
     return NextResponse.json({ message: 'Ошибка сервера' }, { status: 500 });
   }
-}
+} 
