@@ -136,13 +136,25 @@ function ProfileButton() {
   const buttonRef = useRef(null);
   const menuRef = useRef(null);
 
-  // Получение текущего пользователя с сервера
+  const fetchCsrfToken = async () => {
+    try {
+      await fetch('/sanctum/csrf-cookie', {
+        credentials: 'include',
+      });
+    } catch (error) {
+      console.error('Ошибка получения CSRF токена:', error);
+    }
+  };
+
   const fetchCurrentUser = async () => {
     try {
+      await fetchCsrfToken();
+      
       const response = await fetch('/api/v1/user', {
-        credentials: 'include', 
+        credentials: 'include',
         headers: {
           'Accept': 'application/json',
+          'Content-Type': 'application/json',
           'X-Requested-With': 'XMLHttpRequest'
         }
       });
@@ -152,11 +164,12 @@ function ProfileButton() {
         setIsAuthenticated(true);
         setUserName(userData.name || userData.fullname || userData.email?.split('@')[0] || 'Пользователь');
         localStorage.setItem('user', JSON.stringify(userData));
+        localStorage.setItem('is_authenticated', 'true');
       } else if (response.status === 401) {
-
         setIsAuthenticated(false);
         setUserName('');
         localStorage.removeItem('user');
+        localStorage.removeItem('is_authenticated');
       }
     } catch (error) {
       console.error('Ошибка при получении пользователя:', error);
@@ -167,17 +180,32 @@ function ProfileButton() {
   };
 
   useEffect(() => {
-    fetchCurrentUser();
+    const savedAuth = localStorage.getItem('is_authenticated') === 'true';
+    const savedUser = localStorage.getItem('user');
+    
+    if (savedAuth && savedUser) {
+      try {
+        const userData = JSON.parse(savedUser);
+        setIsAuthenticated(true);
+        setUserName(userData.name || userData.fullname || userData.email?.split('@')[0] || 'Пользователь');
+        setLoading(false);
+        fetchCurrentUser();
+      } catch {
+        fetchCurrentUser();
+      }
+    } else {
+      fetchCurrentUser();
+    }
   }, []);
 
   useEffect(() => {
-    const handleStorageChange = (e) => {
-      if (e.key === 'auth_check' || e.key === 'logout') {
+    const handleAuthChange = (event) => {
+      if (event.key === 'auth_change') {
         fetchCurrentUser();
       }
     };
-    window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
+    window.addEventListener('storage', handleAuthChange);
+    return () => window.removeEventListener('storage', handleAuthChange);
   }, []);
 
   useEffect(() => {
@@ -202,20 +230,29 @@ function ProfileButton() {
   
   const logout = async () => {
     try {
-      await fetch('/api/v1/logout', {
+      await fetchCsrfToken();
+      
+      const response = await fetch('/api/v1/logout', {
         method: 'POST',
         credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
+          'Accept': 'application/json',
           'X-Requested-With': 'XMLHttpRequest'
         }
       });
+      
+      if (response.ok) {
+        console.log('Выход выполнен успешно');
+      }
     } catch (error) {
       console.error('Ошибка при выходе:', error);
     }
     
     localStorage.removeItem('user');
-    localStorage.setItem('logout', Date.now().toString());
+    localStorage.removeItem('is_authenticated');
+    localStorage.setItem('auth_change', Date.now().toString());
+    
     setIsAuthenticated(false);
     setIsOpen(false);
     
