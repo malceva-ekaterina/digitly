@@ -16,7 +16,7 @@ export default function Login() {
     
     try {
       // Правильный URL для прокси
-      const response = await fetch('/api/laravel/v1/auth/login', {
+      const response = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),

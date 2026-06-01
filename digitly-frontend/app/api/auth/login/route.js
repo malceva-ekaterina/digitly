@@ -1,48 +1,38 @@
-// app/api/v1/auth/login/route.js
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 
-const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:8000';
-
-export async function POST(request) {
+export async function POST(request: NextRequest) {
   try {
-    const { email, password, remember } = await request.json();
+    const body = await request.json();
     
-    // Получаем CSRF токен
-    await fetch(`${BACKEND_URL}/sanctum/csrf-cookie`, {
-      method: 'GET',
-      credentials: 'include',
-    });
-    
-    const response = await fetch(`${BACKEND_URL}/api/v1/auth/login`, {
+    // Прямой запрос к Laravel
+    const response = await fetch('http://localhost:8000/api/v1/auth/login', {
       method: 'POST',
-      headers: { 
+      headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
-        'X-Requested-With': 'XMLHttpRequest'
       },
-      body: JSON.stringify({ email, password }),
+      body: JSON.stringify(body),
     });
     
     const data = await response.json();
     
-    if (response.ok) {
-      const nextResponse = NextResponse.json({ user: data.user });
-      
-      // Устанавливаем куку auth_token
-      nextResponse.cookies.set('auth_token', data.token, {
+    if (response.ok && data.token) {
+      const nextResponse = NextResponse.json(data);
+      nextResponse.cookies.set('token', data.token, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
+        secure: false,
         sameSite: 'lax',
-        maxAge: remember ? 60 * 60 * 24 * 30 : 60 * 60 * 24,
+        maxAge: 60 * 60 * 24,
         path: '/',
       });
-      
       return nextResponse;
     }
     
-    return NextResponse.json({ message: data.message }, { status: 401 });
+    return NextResponse.json(data, { status: response.status });
   } catch (error) {
-    console.error('Login error:', error);
-    return NextResponse.json({ message: 'Ошибка сервера' }, { status: 500 });
+    return NextResponse.json(
+      { message: 'Server error: ' + String(error) },
+      { status: 500 }
+    );
   }
 }
