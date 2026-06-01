@@ -7,25 +7,27 @@ async function proxyRequest(
   params: { path: string[] },
   method: string
 ) {
-  const path = params.path.join('/');
+  // Получаем путь из параметров
+  let path = params.path.join('/');
   
-  console.log(`[Proxy] ==== START ${method} /api/laravel/${path} ====`);
-  console.log(`[Proxy] LARAVEL_API_URL: ${LARAVEL_API_URL}`);
+  // Убираем лишний 'api' если он есть в начале (так как Laravel уже имеет /api в маршрутах)
+  if (path.startsWith('api/')) {
+    path = path.substring(4); // убираем 'api/'
+  }
   
   // Формируем URL для Laravel
   let url = `${LARAVEL_API_URL}/${path}`;
-  console.log(`[Proxy] Target URL: ${url}`);
+  
+  console.log(`[Proxy] ${method} ${url}`);
   
   try {
     // Получаем тело запроса для POST
     let body = null;
-    let bodyString = '';
     if (method === 'POST') {
       try {
         const clonedRequest = request.clone();
-        bodyString = await clonedRequest.text();
-        body = bodyString;
-        console.log(`[Proxy] Request body: ${bodyString}`);
+        body = await clonedRequest.text();
+        console.log(`[Proxy] Body: ${body}`);
       } catch (e) {
         console.error('Error reading body:', e);
       }
@@ -41,21 +43,18 @@ async function proxyRequest(
     const token = request.cookies.get('token')?.value;
     if (token) {
       headers['Authorization'] = `Bearer ${token}`;
-      console.log('[Proxy] Token found');
-    } else {
-      console.log('[Proxy] No token found');
     }
     
-    console.log(`[Proxy] Sending ${method} request to Laravel...`);
+    console.log(`[Proxy] Sending to Laravel...`);
     
     // Отправляем запрос к Laravel
     const response = await fetch(url, {
       method,
       headers,
-      body: body ? body : undefined,
+      body: body || undefined,
     });
     
-    console.log(`[Proxy] Laravel response status: ${response.status}`);
+    console.log(`[Proxy] Response status: ${response.status}`);
     
     // Получаем данные ответа
     let data;
@@ -63,38 +62,37 @@ async function proxyRequest(
     if (contentType?.includes('application/json')) {
       data = await response.json();
     } else {
-      data = await response.text();
+      const text = await response.text();
+      console.log(`[Proxy] Non-JSON response: ${text.substring(0, 200)}`);
+      return NextResponse.json(
+        { message: 'Сервер вернул неверный ответ', details: text.substring(0, 200) },
+        { status: 500 }
+      );
     }
-    
-    console.log(`[Proxy] Response data:`, data);
     
     // Создаем ответ для клиента
     const nextResponse = NextResponse.json(data, {
       status: response.status,
     });
     
-    // Если в ответе есть токен (при логине), сохраняем его в куку
+    // Если в ответе есть токен (при логине), сохраняем его
     if (data.token) {
       console.log('[Proxy] Token received, saving to cookie');
       nextResponse.cookies.set('token', data.token, {
         httpOnly: true,
-        secure: false, // Для localhost ставим false
+        secure: false,
         sameSite: 'lax',
         maxAge: 60 * 60 * 24,
         path: '/',
       });
     }
     
-    console.log(`[Proxy] ==== END ${method} /api/laravel/${path} ====`);
     return nextResponse;
     
   } catch (error) {
-    console.error(`[Proxy Error] ${method} ${url}:`, error);
+    console.error(`[Proxy Error]:`, error);
     return NextResponse.json(
-      { 
-        message: 'Ошибка соединения с сервером',
-        error: String(error)
-      },
+      { message: 'Ошибка соединения с сервером: ' + String(error) },
       { status: 500 }
     );
   }
