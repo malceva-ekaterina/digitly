@@ -1,10 +1,8 @@
 "use client";
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
 export default function Login() {
-  const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [remember, setRemember] = useState(false);
@@ -17,32 +15,32 @@ export default function Login() {
     setError('');
     
     try {
-      // Используем универсальный прокси
+      // Правильный URL для прокси
       const response = await fetch('/api/laravel/v1/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
       });
       
+      console.log('Response status:', response.status);
+      
       const data = await response.json();
-      console.log('Login response:', response.status, data);
+      console.log('Response data:', data);
       
       if (response.ok && data.token) {
-        // Сохраняем токен и пользователя в localStorage
+        // Сохраняем в localStorage
         localStorage.setItem('token', data.token);
         localStorage.setItem('user', JSON.stringify(data.user));
         localStorage.setItem('is_authenticated', 'true');
         
-        console.log('Token saved, redirecting...');
-        
-        // Перенаправляем на главную
+        console.log('Login successful, redirecting...');
         window.location.href = '/';
       } else {
         setError(data.message || 'Неверный email или пароль');
       }
     } catch (err) {
-      console.error('Login fetch error:', err);
-      setError('Ошибка соединения с сервером');
+      console.error('Login error:', err);
+      setError('Ошибка соединения с сервером: ' + err.message);
     } finally {
       setIsLoading(false);
     }
@@ -125,7 +123,7 @@ export default function Login() {
             
             <button 
               type="button"
-              onClick={() => router.back()}
+              onClick={() => window.history.back()}
               className="mt-3 text-sm text-gray-500 hover:text-gray-700"
             >
               ← Назад

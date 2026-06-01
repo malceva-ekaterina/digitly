@@ -2,82 +2,50 @@ import { NextRequest, NextResponse } from 'next/server';
 
 const LARAVEL_API_URL = process.env.LARAVEL_API_URL || 'http://localhost:8000';
 
-async function proxyRequest(
+// Добавьте это для отладки
+export const dynamic = 'force-dynamic';
+
+export async function POST(
   request: NextRequest,
-  params: { path: string[] },
-  method: string
+  { params }: { params: { path: string[] } }
 ) {
-  // Получаем путь из параметров
-  let path = params.path.join('/');
+  console.log('[DEBUG] Received POST request');
+  console.log('[DEBUG] params.path:', params.path);
+  console.log('[DEBUG] URL:', request.url);
   
-  // Убираем лишний 'api' если он есть в начале (так как Laravel уже имеет /api в маршрутах)
-  if (path.startsWith('api/')) {
-    path = path.substring(4); // убираем 'api/'
-  }
+  const path = params.path.join('/');
+  console.log('[DEBUG] Joined path:', path);
   
   // Формируем URL для Laravel
-  let url = `${LARAVEL_API_URL}/${path}`;
-  
-  console.log(`[Proxy] ${method} ${url}`);
+  const url = `${LARAVEL_API_URL}/api/${path}`;
+  console.log('[DEBUG] Target Laravel URL:', url);
   
   try {
-    // Получаем тело запроса для POST
-    let body = null;
-    if (method === 'POST') {
-      try {
-        const clonedRequest = request.clone();
-        body = await clonedRequest.text();
-        console.log(`[Proxy] Body: ${body}`);
-      } catch (e) {
-        console.error('Error reading body:', e);
-      }
-    }
-    
-    // Подготавливаем заголовки
-    const headers: HeadersInit = {
-      'Accept': 'application/json',
-      'Content-Type': 'application/json',
-    };
-    
-    // Добавляем токен если есть
-    const token = request.cookies.get('token')?.value;
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
-    }
-    
-    console.log(`[Proxy] Sending to Laravel...`);
+    const body = await request.json();
+    console.log('[DEBUG] Request body:', body);
     
     // Отправляем запрос к Laravel
     const response = await fetch(url, {
-      method,
-      headers,
-      body: body || undefined,
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+      body: JSON.stringify(body),
     });
     
-    console.log(`[Proxy] Response status: ${response.status}`);
+    console.log('[DEBUG] Laravel response status:', response.status);
     
-    // Получаем данные ответа
-    let data;
-    const contentType = response.headers.get('content-type');
-    if (contentType?.includes('application/json')) {
-      data = await response.json();
-    } else {
-      const text = await response.text();
-      console.log(`[Proxy] Non-JSON response: ${text.substring(0, 200)}`);
-      return NextResponse.json(
-        { message: 'Сервер вернул неверный ответ', details: text.substring(0, 200) },
-        { status: 500 }
-      );
-    }
+    const data = await response.json();
+    console.log('[DEBUG] Laravel response data:', data);
     
-    // Создаем ответ для клиента
     const nextResponse = NextResponse.json(data, {
       status: response.status,
     });
     
-    // Если в ответе есть токен (при логине), сохраняем его
+    // Если есть токен, сохраняем в cookie
     if (data.token) {
-      console.log('[Proxy] Token received, saving to cookie');
+      console.log('[DEBUG] Token found, saving to cookie');
       nextResponse.cookies.set('token', data.token, {
         httpOnly: true,
         secure: false,
@@ -88,26 +56,56 @@ async function proxyRequest(
     }
     
     return nextResponse;
-    
   } catch (error) {
-    console.error(`[Proxy Error]:`, error);
+    console.error('[DEBUG] Error:', error);
     return NextResponse.json(
-      { message: 'Ошибка соединения с сервером: ' + String(error) },
+      { message: 'Ошибка сервера: ' + String(error) },
       { status: 500 }
     );
   }
-}
-
-export async function POST(
-  request: NextRequest,
-  { params }: { params: { path: string[] } }
-) {
-  return proxyRequest(request, params, 'POST');
 }
 
 export async function GET(
   request: NextRequest,
   { params }: { params: { path: string[] } }
 ) {
-  return proxyRequest(request, params, 'GET');
+  console.log('[DEBUG] Received GET request');
+  console.log('[DEBUG] params.path:', params.path);
+  
+  const path = params.path.join('/');
+  const url = `${LARAVEL_API_URL}/api/${path}`;
+  console.log('[DEBUG] Target Laravel URL:', url);
+  
+  try {
+    const token = request.cookies.get('token')?.value;
+    console.log('[DEBUG] Token from cookie:', token ? 'Present' : 'Missing');
+    
+    const headers: HeadersInit = {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+    };
+    
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+    
+    const response = await fetch(url, {
+      method: 'GET',
+      headers,
+    });
+    
+    console.log('[DEBUG] Laravel response status:', response.status);
+    
+    const data = await response.json();
+    
+    return NextResponse.json(data, {
+      status: response.status,
+    });
+  } catch (error) {
+    console.error('[DEBUG] Error:', error);
+    return NextResponse.json(
+      { message: 'Ошибка сервера' },
+      { status: 500 }
+    );
+  }
 }
