@@ -2,7 +2,6 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { NextResponse } from 'next/server';
 
 export default function Login() {
   const router = useRouter();
@@ -18,7 +17,6 @@ export default function Login() {
     setError('');
     
     try {
-      // Явно указываем полный URL или используем относительный путь к API route
       const response = await fetch('/api/v1/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -26,16 +24,15 @@ export default function Login() {
       });
       
       const data = await response.json();
+      console.log('Login response:', response.status, data);
       
       if (response.ok) {
-        // Устанавливаем флаг авторизации в localStorage для быстрого доступа
+        // Сохраняем данные пользователя
         localStorage.setItem('is_authenticated', 'true');
         localStorage.setItem('user', JSON.stringify(data.user));
         
-        // Триггерим событие для других компонентов
-        window.dispatchEvent(new Event('storage'));
-        
-        router.push('/'); 
+        // Принудительно обновляем страницу, чтобы ProfileButton перезагрузился
+        window.location.href = '/';
       } else {
         setError(data.message || 'Неверный email или пароль');
       }
@@ -55,13 +52,9 @@ export default function Login() {
         <div className="bg-white rounded-4xl shadow-xl w-full px-4 sm:px-6 md:px-8 py-8 sm:py-12 md:py-16">
           
           <div className="flex flex-col items-center">
-            <img 
-              src="/lock.png" 
-              alt="Иконка замка" 
-              className="w-6 sm:w-7 md:w-8" 
-            />
+            <img src="/lock.png" alt="Иконка замка" className="w-6 sm:w-7 md:w-8" />
             
-            <p className="text-center font-sans font-bold text-2xl sm:text-3xl md:text-4xl text-black"> Войти в систему</p>
+            <p className="text-center font-sans font-bold text-2xl sm:text-3xl md:text-4xl text-black">Войти в систему</p>
 
             <form onSubmit={handleSubmit} className="w-full flex flex-col items-center">
               

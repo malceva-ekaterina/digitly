@@ -149,8 +149,10 @@ function ProfileButton() {
 
   const fetchCurrentUser = async () => {
     try {
+      console.log('=== ProfileButton: fetchCurrentUser START ===');
       await fetchCsrfToken();
       
+      console.log('Making request to /api/v1/user');
       const response = await fetch('/api/v1/user', {
         credentials: 'include',
         headers: {
@@ -160,21 +162,30 @@ function ProfileButton() {
         }
       });
       
+      console.log('Response status:', response.status);
+      
       if (response.ok) {
         const userData = await response.json();
+        console.log('User data received:', userData);
         setIsAuthenticated(true);
         setUserName(userData.name || userData.fullname || userData.email?.split('@')[0] || 'Пользователь');
         localStorage.setItem('user', JSON.stringify(userData));
       } else if (response.status === 401) {
+        console.log('User not authenticated (401)');
         setIsAuthenticated(false);
         setUserName('');
         localStorage.removeItem('user');
+      } else {
+        const errorData = await response.json();
+        console.log('Error response:', errorData);
+        setIsAuthenticated(false);
       }
     } catch (error) {
-      console.error('Ошибка при получении пользователя:', error);
+      console.error('Error in fetchCurrentUser:', error);
       setIsAuthenticated(false);
     } finally {
       setLoading(false);
+      console.log('=== ProfileButton: fetchCurrentUser END ===');
     }
   };
 
