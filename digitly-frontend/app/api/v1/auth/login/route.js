@@ -6,42 +6,45 @@ export async function POST(request) {
   try {
     const { email, password, remember } = await request.json();
     
-    console.log('1. Попытка входа для:', email);
+    console.log('1. Login attempt for:', email);
     
-    // Получаем CSRF токен
+    // 1. Получаем CSRF cookie от Laravel
     const csrfResponse = await fetch(`${BACKEND_URL}/sanctum/csrf-cookie`, {
       method: 'GET',
       credentials: 'include',
     });
     
-    console.log('2. CSRF ответ:', csrfResponse.status);
-    
-    // Получаем cookies из ответа CSRF
+    // Получаем все cookies из ответа
     const csrfCookies = csrfResponse.headers.get('set-cookie');
-    console.log('3. CSRF cookies:', csrfCookies);
+    console.log('2. CSRF cookies received');
     
-    const response = await fetch(`${BACKEND_URL}/api/v1/auth/login`, {
+    // 2. Отправляем запрос на вход в Laravel
+    const loginResponse = await fetch(`${BACKEND_URL}/api/v1/auth/login`, {
       method: 'POST',
-      headers: { 
+      headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
-        'X-Requested-With': 'XMLHttpRequest',
-        'Cookie': csrfCookies || ''
+        'Cookie': csrfCookies || '',
       },
       body: JSON.stringify({ email, password }),
     });
     
-    const data = await response.json();
-    console.log('4. Ответ от бэкенда:', response.status, data);
+    const data = await loginResponse.json();
+    console.log('3. Login response status:', loginResponse.status);
     
-    if (response.ok && data.token) {
-      // Создаем ответ с данными пользователя
-      const nextResponse = NextResponse.json({ 
+    if (loginResponse.ok && data.token) {
+      // Получаем cookies из ответа Laravel (если есть)
+      const laravelCookies = loginResponse.headers.get('set-cookie');
+      console.log('4. Laravel cookies:', laravelCookies);
+      
+      // Создаем ответ для клиента
+      const nextResponse = NextResponse.json({
         success: true,
-        user: data.user 
+        user: data.user,
+        token: data.token
       });
       
-      // Устанавливаем куку auth_token
+      // Устанавливаем куку auth_token для Next.js
       const maxAge = remember ? 60 * 60 * 24 * 30 : 60 * 60 * 24;
       
       nextResponse.cookies.set('auth_token', data.token, {
@@ -52,19 +55,23 @@ export async function POST(request) {
         path: '/',
       });
       
-      console.log('5. Кука auth_token установлена');
+      // Если Laravel вернул свои куки, передаем их клиенту
+      if (laravelCookies) {
+        nextResponse.headers.set('Set-Cookie', laravelCookies);
+      }
       
+      console.log('5. Auth token cookie set successfully');
       return nextResponse;
     }
     
     return NextResponse.json(
-      { message: data.message || 'Неверный email или пароль' }, 
+      { message: data.message || 'Invalid email or password' },
       { status: 401 }
     );
   } catch (error) {
     console.error('Login error:', error);
     return NextResponse.json(
-      { message: 'Ошибка сервера: ' + error.message }, 
+      { message: 'Server error: ' + error.message },
       { status: 500 }
     );
   }

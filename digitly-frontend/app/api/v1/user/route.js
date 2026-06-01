@@ -4,34 +4,44 @@ const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:8000';
 
 export async function GET(request) {
   try {
-    // Получаем cookies из запроса
-    const cookieHeader = request.headers.get('cookie') || '';
+    // Получаем токен из куки
+    const authToken = request.cookies.get('auth_token')?.value;
     
-    // Проксируем запрос к Laravel бэкенду
+    if (!authToken) {
+      console.log('No auth_token cookie found');
+      return NextResponse.json(
+        { message: 'Not authenticated' },
+        { status: 401 }
+      );
+    }
+    
+    console.log('Auth token found, fetching user from Laravel');
+    
+    // Запрашиваем пользователя из Laravel с токеном
     const response = await fetch(`${BACKEND_URL}/api/v1/user`, {
       method: 'GET',
-      credentials: 'include',
       headers: {
         'Accept': 'application/json',
         'Content-Type': 'application/json',
-        'Cookie': cookieHeader
-      }
+        'Authorization': `Bearer ${authToken}`,
+      },
     });
     
     const data = await response.json();
+    console.log('Laravel user response status:', response.status);
     
     if (response.ok) {
-      return NextResponse.json(data);
+      return NextResponse.json(data.user || data);
     }
     
     return NextResponse.json(
-      { message: data.message || 'Не авторизован' }, 
-      { status: response.status }
+      { message: data.message || 'Not authenticated' },
+      { status: 401 }
     );
   } catch (error) {
     console.error('User fetch error:', error);
     return NextResponse.json(
-      { message: 'Ошибка сервера' }, 
+      { message: 'Server error' },
       { status: 500 }
     );
   }

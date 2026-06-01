@@ -4,20 +4,21 @@ const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:8000';
 
 export async function POST(request) {
   try {
-    const cookieHeader = request.headers.get('cookie') || '';
+    const authToken = request.cookies.get('auth_token')?.value;
     
-    const response = await fetch(`${BACKEND_URL}/api/v1/logout`, {
-      method: 'POST',
-      credentials: 'include',
-      headers: {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json',
-        'X-Requested-With': 'XMLHttpRequest',
-        'Cookie': cookieHeader
-      }
-    });
+    if (authToken) {
+      // Отправляем запрос на выход в Laravel
+      await fetch(`${BACKEND_URL}/api/v1/auth/logout`, {
+        method: 'POST',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${authToken}`,
+        },
+      });
+    }
     
-    // Создаем ответ и удаляем куку auth_token
+    // Создаем ответ и удаляем куку
     const nextResponse = NextResponse.json({ success: true });
     nextResponse.cookies.delete('auth_token');
     
@@ -25,7 +26,7 @@ export async function POST(request) {
   } catch (error) {
     console.error('Logout error:', error);
     return NextResponse.json(
-      { message: 'Ошибка сервера' }, 
+      { message: 'Server error' },
       { status: 500 }
     );
   }
