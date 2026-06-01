@@ -40,7 +40,7 @@ class OlympiadModerationDetailScreen extends Screen
      */
     public function name(): ?string
     {
-        return 'OlympiadModerationDetailScreen';
+        return 'Детальный просмотр';
     }
 
     /**
@@ -84,12 +84,25 @@ class OlympiadModerationDetailScreen extends Screen
                     }),
                 Sight::make('display_mode', 'Дисплей мод'),
                 Sight::make('random_questions', 'Рандомность вопросов'),
-                Sight::make('tiebreak_rule', 'Рандомность вопросов'),
-                Sight::make('show_public_rating', 'Рандомность вопросов'),
-                Sight::make('registration_start_at', 'Начало регистрации'),
-                Sight::make('registration_end_at', 'Конец регистрации'),
-                Sight::make('participation_start_at', 'Начало олимпиады'),
-                Sight::make('participation_end_at', 'Конец регистрации'),
+                // Sight::make('tiebreak_rule', 'Рандомность вопросов'),
+                Sight::make('show_public_rating', 'Просмотр публичных рейтингов')->render( function () {
+                        return $this->olympiad->show_public_rating == 1 ?"Да" :  "-";
+                    }),
+                Sight::make('registration_start_at', 'Начало регистрации')
+                ->render( function () {
+                        return $this->olympiad->registration_start_at ?? "-";
+                    }),
+                Sight::make('registration_end_at', 'Конец регистрации')->render( function () {
+                        return $this->olympiad->registration_end_at ?? "-";
+                    }),
+                Sight::make('participation_start_at', 'Начало олимпиады')
+                ->render( function () {
+                        return $this->olympiad->participation_start_at ?? "-";
+                    }),
+                Sight::make('participation_end_at', 'Конец регистрации')
+                ->render( function () {
+                        return $this->olympiad->participation_end_at ?? "-";
+                    }),
                 Sight::make('institution.fullname', 'Название ОО'),
                 ]),
 

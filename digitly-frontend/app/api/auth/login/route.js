@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 const LARAVEL_API_URL = process.env.LARAVEL_API_URL || 'http://localhost:8000';
 
-export async function POST(request: NextRequest) {
+export async function POST(request) {
   try {
     const body = await request.json();
     const { email, password } = body;
