@@ -135,7 +135,7 @@ function ProfileButton() {
   const menuRef = useRef(null);
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem('auth_token');
     const user = localStorage.getItem('user');
     setIsAuthenticated(!!token);
     if (user) {
@@ -168,7 +168,7 @@ function ProfileButton() {
   };
   
   const logout = () => {
-    localStorage.removeItem('token');
+    localStorage.removeItem('auth_token');
     localStorage.removeItem('user');
     window.location.href = '/';
   };

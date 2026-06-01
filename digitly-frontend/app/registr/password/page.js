@@ -43,7 +43,8 @@ export default function RegitrPassword() {
     defaultValues: {
       password: '',
       confirmPassword: '',
-      agree: false
+      agree: false,
+      accepted_privacy: true,
     }
   });
 
@@ -66,6 +67,8 @@ export default function RegitrPassword() {
           email: registrationData?.email,
           password: data.password,
           password_confirmation: data.confirmPassword,
+          accepted_terms: true,
+          accepted_privacy: true,
         }),
       });
       

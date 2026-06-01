@@ -24,7 +24,7 @@ export default function VerifyEmailPage() {
       // интеграция с бекендом
       try {
         const response = await fetch(
-          ``,
+          `api/v1/email/verify`,
           {
             method: 'GET',
             headers: {
