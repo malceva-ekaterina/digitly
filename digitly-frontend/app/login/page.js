@@ -17,26 +17,25 @@ export default function Login() {
     setError('');
     
     try {
-      const response = await fetch('/api/v1/auth/login', {
+      // Используем универсальный прокси
+      const response = await fetch('/api/laravel/api/v1/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password, remember }),
+        body: JSON.stringify({ email, password }),
       });
       
       const data = await response.json();
       console.log('Login response:', response.status, data);
       
-      if (response.ok) {
-        // Сохраняем данные пользователя и токен в localStorage
-        localStorage.setItem('is_authenticated', 'true');
+      if (response.ok && data.token) {
+        // Сохраняем токен и пользователя в localStorage
+        localStorage.setItem('token', data.token);
         localStorage.setItem('user', JSON.stringify(data.user));
+        localStorage.setItem('is_authenticated', 'true');
         
-        // Сохраняем токен в localStorage для fallback
-        if (data.token) {
-          localStorage.setItem('auth_token', data.token);
-        }
+        console.log('Token saved, redirecting...');
         
-        // Перезагружаем страницу
+        // Перенаправляем на главную
         window.location.href = '/';
       } else {
         setError(data.message || 'Неверный email или пароль');

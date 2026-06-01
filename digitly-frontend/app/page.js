@@ -128,6 +128,7 @@ function CollegeCard({ college, isActive = false }) {
 }
 
 // ========== КОМПОНЕНТ КНОПКИ ПРОФИЛЯ ==========
+// ========== КОМПОНЕНТ КНОПКИ ПРОФИЛЯ ==========
 function ProfileButton() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [userName, setUserName] = useState('');
@@ -139,7 +140,8 @@ function ProfileButton() {
 
   // Получение данных пользователя из localStorage
   const loadUserFromStorage = () => {
-    const token = localStorage.getItem('auth_token');
+    // Используем единый ключ 'token' (не 'auth_token')
+    const token = localStorage.getItem('token');
     const user = localStorage.getItem('user');
     
     if (token && user) {
@@ -147,7 +149,9 @@ function ProfileButton() {
         const userData = JSON.parse(user);
         console.log('User loaded from localStorage:', userData);
         setIsAuthenticated(true);
-        setUserName(userData.name || userData.fullname || userData.email?.split('@')[0] || 'Пользователь');
+        // Правильное получение имени из данных пользователя
+        const name = userData.user?.name || userData.name || userData.user?.fullname || userData.fullname || userData.email?.split('@')[0] || 'Пользователь';
+        setUserName(name);
         return true;
       } catch (e) {
         console.error('Error parsing user data:', e);
@@ -157,10 +161,11 @@ function ProfileButton() {
     return false;
   };
 
-  // Проверка авторизации через API (только для обновления данных)
-  const refreshUserFromServer = async () => {
+  // Проверка авторизации через API
+  const checkAuthFromServer = async () => {
     try {
-      const response = await fetch('/api/v1/user', {
+      // Используем универсальный прокси
+      const response = await fetch('/api/laravel/api/v1/user', {
         credentials: 'include',
         headers: {
           'Accept': 'application/json',
@@ -170,34 +175,50 @@ function ProfileButton() {
       
       if (response.ok) {
         const data = await response.json();
-        console.log('User refreshed from server:', userData);
-        setIsAuthenticated(true);
-        setUserName(userData.name || userData.fullname || userData.email?.split('@')[0] || 'Пользователь');
-        localStorage.setItem('auth_token', data.token);
-        localStorage.setItem('user', JSON.stringify(data.user));
-        localStorage.setItem('is_authenticated', 'true');
-        window.location.href = '/';
+        console.log('User from server:', data);
+        
+        // Laravel возвращает { user: { ... } }
+        const userData = data.user || data;
+        const token = localStorage.getItem('token');
+        
+        if (token) {
+          setIsAuthenticated(true);
+          const name = userData.name || userData.fullname || userData.email?.split('@')[0] || 'Пользователь';
+          setUserName(name);
+          localStorage.setItem('user', JSON.stringify(userData));
+          return true;
+        }
+      } else if (response.status === 401) {
+        console.log('Not authenticated on server');
+        // Очищаем невалидные данные
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        setIsAuthenticated(false);
       }
     } catch (error) {
-      console.log('Server refresh failed, using localStorage data');
+      console.log('Server check failed:', error);
     }
+    return false;
   };
 
   useEffect(() => {
     // Загружаем пользователя из localStorage
     const hasUser = loadUserFromStorage();
-    setLoading(false);
     
-    // Пытаемся обновить данные с сервера в фоне
     if (hasUser) {
-      refreshUserFromServer();
+      setLoading(false);
+      // Проверяем на сервере в фоне
+      checkAuthFromServer();
+    } else {
+      // Если нет в localStorage, пробуем сервер
+      checkAuthFromServer().finally(() => setLoading(false));
     }
   }, []);
 
   // Слушаем изменения в localStorage
   useEffect(() => {
     const handleStorageChange = (e) => {
-      if (e.key === 'auth_token' || e.key === 'user' || e.key === 'is_authenticated') {
+      if (e.key === 'token' || e.key === 'user') {
         loadUserFromStorage();
       }
     };
@@ -221,23 +242,27 @@ function ProfileButton() {
   const handleNavigation = (path) => { setIsOpen(false); router.push(path); };
   
   const handleLogout = async () => {
+    const token = localStorage.getItem('token');
     try {
-      await fetch('/api/v1/logout', {
-        method: 'POST',
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        }
-      });
+      if (token) {
+        await fetch('/api/laravel/api/v1/auth/logout', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
+        });
+      }
     } catch (error) {
       console.error('Ошибка при выходе:', error);
     }
     
     // Очищаем все данные
     localStorage.removeItem('user');
-    localStorage.removeItem('auth_token');
+    localStorage.removeItem('token');
     localStorage.removeItem('is_authenticated');
+    document.cookie = 'token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+    
     setIsAuthenticated(false);
     setIsOpen(false);
     router.push('/');
