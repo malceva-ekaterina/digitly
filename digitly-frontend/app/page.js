@@ -137,116 +137,68 @@ function ProfileButton() {
   const buttonRef = useRef(null);
   const router = useRouter();
 
-  // Проверка авторизации через localStorage (fallback)
-  const checkLocalStorageAuth = () => {
+  // Получение данных пользователя из localStorage
+  const loadUserFromStorage = () => {
     const token = localStorage.getItem('auth_token');
     const user = localStorage.getItem('user');
     
     if (token && user) {
       try {
         const userData = JSON.parse(user);
-        console.log('Using localStorage auth fallback');
+        console.log('User loaded from localStorage:', userData);
         setIsAuthenticated(true);
         setUserName(userData.name || userData.fullname || userData.email?.split('@')[0] || 'Пользователь');
         return true;
       } catch (e) {
-        console.error('Error parsing user from localStorage:', e);
+        console.error('Error parsing user data:', e);
         return false;
       }
     }
     return false;
   };
 
-  const fetchCsrfToken = async () => {
+  // Проверка авторизации через API (только для обновления данных)
+  const refreshUserFromServer = async () => {
     try {
-      await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000'}/sanctum/csrf-cookie`, {
-        credentials: 'include',
-      });
-    } catch (error) {
-      console.error('Ошибка получения CSRF токена:', error);
-    }
-  };
-
-  const fetchCurrentUserFromServer = async () => {
-    try {
-      console.log('=== Fetching user from server ===');
-      await fetchCsrfToken();
-      
       const response = await fetch('/api/v1/user', {
         credentials: 'include',
         headers: {
           'Accept': 'application/json',
           'Content-Type': 'application/json',
-          'X-Requested-With': 'XMLHttpRequest'
         }
       });
-      
-      console.log('Response status:', response.status);
       
       if (response.ok) {
-        const userData = await response.json();
-        console.log('User data received:', userData);
+        const data = await response.json();
+        console.log('User refreshed from server:', userData);
         setIsAuthenticated(true);
         setUserName(userData.name || userData.fullname || userData.email?.split('@')[0] || 'Пользователь');
-        localStorage.setItem('user', JSON.stringify(userData));
-        // Сохраняем флаг авторизации
+        localStorage.setItem('auth_token', data.token);
+        localStorage.setItem('user', JSON.stringify(data.user));
         localStorage.setItem('is_authenticated', 'true');
-        return true;
-      } else if (response.status === 401) {
-        console.log('User not authenticated (401)');
-        // Если сервер вернул 401, проверяем localStorage
-        if (!checkLocalStorageAuth()) {
-          setIsAuthenticated(false);
-          setUserName('');
-          localStorage.removeItem('user');
-          localStorage.removeItem('auth_token');
-          localStorage.removeItem('is_authenticated');
-        }
-        return false;
-      } else {
-        const errorData = await response.json();
-        console.log('Error response:', errorData);
-        // При ошибке проверяем localStorage
-        if (!checkLocalStorageAuth()) {
-          setIsAuthenticated(false);
-        }
-        return false;
+        window.location.href = '/';
       }
     } catch (error) {
-      console.error('Error fetching user from server:', error);
-      // При ошибке сети пробуем localStorage
-      checkLocalStorageAuth();
-      return false;
+      console.log('Server refresh failed, using localStorage data');
     }
-  };
-
-  const fetchCurrentUser = async () => {
-    // Сначала пробуем localStorage как быстрый fallback
-    if (checkLocalStorageAuth()) {
-      setLoading(false);
-      // Все равно пробуем обновить данные с сервера в фоне
-      fetchCurrentUserFromServer().finally(() => {
-        // Убеждаемся, что loading снят
-        setLoading(false);
-      });
-      return;
-    }
-    
-    // Если localStorage пуст, идем на сервер
-    await fetchCurrentUserFromServer();
-    setLoading(false);
   };
 
   useEffect(() => {
-    fetchCurrentUser();
+    // Загружаем пользователя из localStorage
+    const hasUser = loadUserFromStorage();
+    setLoading(false);
+    
+    // Пытаемся обновить данные с сервера в фоне
+    if (hasUser) {
+      refreshUserFromServer();
+    }
   }, []);
 
-  // Слушаем изменения в localStorage (для синхронизации между вкладками)
+  // Слушаем изменения в localStorage
   useEffect(() => {
     const handleStorageChange = (e) => {
       if (e.key === 'auth_token' || e.key === 'user' || e.key === 'is_authenticated') {
-        console.log('Storage changed, re-fetching user');
-        fetchCurrentUser();
+        loadUserFromStorage();
       }
     };
     
@@ -270,21 +222,19 @@ function ProfileButton() {
   
   const handleLogout = async () => {
     try {
-      await fetchCsrfToken();
       await fetch('/api/v1/logout', {
         method: 'POST',
         credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
-          'X-Requested-With': 'XMLHttpRequest'
         }
       });
     } catch (error) {
       console.error('Ошибка при выходе:', error);
     }
     
-    // Очищаем все данные авторизации
+    // Очищаем все данные
     localStorage.removeItem('user');
     localStorage.removeItem('auth_token');
     localStorage.removeItem('is_authenticated');
