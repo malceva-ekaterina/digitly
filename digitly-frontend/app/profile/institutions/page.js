@@ -333,14 +333,14 @@ export default function MyInstitutionsPage() {
                               <span className="text-xs text-gray-400">
                                 {inst.role === 'admin' ? 'Администратор' : 'Методист'}
                               </span>
-                              {inst.status === 'approved' && (
-                                <button 
-                                  onClick={() => router.push(`/institutions/${inst.id}/dashboard?mock=true`)}
-                                  className="text-sm text-[#8E51FF] hover:underline"
-                                >
-                                  Подробнее →
-                                </button>
-                              )}
+                                {inst.status === 'approved' && (
+                                  <button 
+                                    onClick={() => router.push(`/institutions/${inst.id}/dashboard?mock=true`)}
+                                    className="text-sm text-[#8E51FF] hover:underline"
+                                  >
+                                    Подробнее →
+                                  </button>
+                                )}
                               {inst.status === 'pending' && (
                                 <button className="text-sm text-gray-400 cursor-not-allowed" disabled>
                                   Ожидание модерации

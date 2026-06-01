@@ -307,6 +307,29 @@ const MOCK_OLYMPIADS = [
 ];
 
 export default function InstitutionDashboardPage() {
+  // ========== МОКОВЫЕ ДАННЫЕ ДЛЯ ТЕСТОВОГО РЕЖИМА ==========
+const getMockData = () => {
+  return {
+    institution: {
+      id: 1,
+      name: "ГАПОУ СО «Нижнетагильский торгово-экономический колледж»",
+      inn: "6668012345",
+      website: "https://nttek.ru",
+      status: "approved",
+      created_at: "2025-01-15T10:30:00.000Z",
+      balance: 125000,
+      active_olympiads: 8,
+      participants_month: 156,
+    },
+    olympiads: [
+      { id: 1, title: "Олимпиада по информатике", type: "permanent", status: "approved", has_sales: false, questions_count: 15, created_at: "2025-01-15T10:00:00Z", rejection_reason: null, price: 0, description: "Проверка знаний по информатике", subject: "Информатика", age_group: "5-9 классы", block_reason: null, blocked_at: null },
+      { id: 2, title: "Математическая олимпиада", type: "scheduled", status: "approved", has_sales: true, questions_count: 25, created_at: "2025-01-20T14:30:00Z", rejection_reason: null, price: 500, description: "Математические задачи разного уровня", subject: "Математика", age_group: "10-11 классы", block_reason: null, blocked_at: null },
+      { id: 3, title: "Олимпиада по русскому языку", type: "permanent", status: "draft", has_sales: false, questions_count: 10, created_at: "2025-01-10T09:15:00Z", rejection_reason: null, price: 0, description: "Проверка грамотности", subject: "Русский язык", age_group: "5-11 классы", block_reason: null, blocked_at: null },
+      { id: 4, title: "Олимпиада по физике", type: "scheduled", status: "pending_moderation", has_sales: false, questions_count: 8, created_at: "2025-01-18T11:45:00Z", rejection_reason: null, price: 300, description: "Физика для старших классов", subject: "Физика", age_group: "10-11 классы", block_reason: null, blocked_at: null },
+      { id: 5, title: "Олимпиада по химии", type: "permanent", status: "rejected", has_sales: false, questions_count: 12, created_at: "2025-01-22T16:20:00Z", rejection_reason: "Не указаны источники информации для нескольких вопросов", price: 200, description: "Химия для 9-11 классов", subject: "Химия", age_group: "9-11 классы", block_reason: null, blocked_at: null },
+    ]
+  };
+};
   const router = useRouter();
   const params = useParams();
   const institutionId = params?.id;
@@ -331,43 +354,57 @@ export default function InstitutionDashboardPage() {
   }, [institutionId]);
 
   const fetchData = async () => {
-    setLoading(true);
-    try {
-      const token = localStorage.getItem('token');
-      
-      if (isTestMode) {
-        setInstitution(MOCK_INSTITUTION);
-        setOlympiads(MOCK_OLYMPIADS);
-        setLoading(false);
-        return;
-      }
-      
-      const [institutionRes, olympiadsRes] = await Promise.all([
-        fetch(`/api/v1/institutions/${institutionId}`, {
-          headers: { 'Authorization': `Bearer ${token}` }
-        }),
-        fetch(`/api/v1/institutions/${institutionId}/olympiads`, {
-          headers: { 'Authorization': `Bearer ${token}` }
-        })
-      ]);
-      
-      if (institutionRes.ok) {
-        const data = await institutionRes.json();
-        setInstitution(data);
-      }
-      
-      if (olympiadsRes.ok) {
-        const data = await olympiadsRes.json();
-        setOlympiads(data);
-      }
-    } catch (err) {
-      console.error('Ошибка загрузки:', err);
-      setInstitution(MOCK_INSTITUTION);
-      setOlympiads(MOCK_OLYMPIADS);
-    } finally {
+  setLoading(true);
+  try {
+    const isMock = window.location.search.includes('mock=true');
+    
+    if (isMock) {
+      // Используем тестовые данные
+      const mockData = getMockData();
+      setInstitution(mockData.institution);
+      setOlympiads(mockData.olympiads);
       setLoading(false);
+      return;
     }
-  };
+    
+    const token = localStorage.getItem('token');
+    
+    const [institutionRes, olympiadsRes] = await Promise.all([
+      fetch(`/api/v1/institutions/${institutionId}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      }),
+      fetch(`/api/v1/institutions/${institutionId}/olympiads`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      })
+    ]);
+    
+    if (institutionRes.ok) {
+      const data = await institutionRes.json();
+      setInstitution(data);
+    } else {
+      // Если API не работает, используем тестовые данные
+      const mockData = getMockData();
+      setInstitution(mockData.institution);
+    }
+    
+    if (olympiadsRes.ok) {
+      const data = await olympiadsRes.json();
+      setOlympiads(data);
+    } else {
+      // Если API не работает, используем тестовые данные
+      const mockData = getMockData();
+      setOlympiads(mockData.olympiads);
+    }
+  } catch (err) {
+    console.error('Ошибка загрузки:', err);
+    // При ошибке используем тестовые данные
+    const mockData = getMockData();
+    setInstitution(mockData.institution);
+    setOlympiads(mockData.olympiads);
+  } finally {
+    setLoading(false);
+  }
+};
 
   // Скрытие олимпиады из каталога
   const handleHideOlympiad = async (olympiadId, e) => {
