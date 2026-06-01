@@ -20,7 +20,6 @@ class Institution extends Model
         'actual_address_id',
         'contact_email',
         'contact_phone',
-        'application_scan',
         'logotype_id',
         'signature_id',
         'seal_id',
@@ -94,7 +93,7 @@ class Institution extends Model
 
     public function applicationScan()
     {
-        return $this->belongsTo(Attachment::class, 'application_scan');
+        return $this->belongsTo(Attachment::class, 'director_app_id');
     }
 
     public function admins()
@@ -132,5 +131,10 @@ class Institution extends Model
     public function questions()
     {
         return $this->hasMany(Question::class);
+    }
+
+    public function awardDocumentTemplates()
+    {
+        return $this->hasMany(AwardDocumentTemplate::class);
     }
 }

@@ -47,6 +47,7 @@ class QuestionController extends Controller
         }
 
         $question = Question::create([
+            'institution_id' => $id,
             'created_by' => $request->user()->id,
             'prompt' => $request->prompt,
             'type' => $request->type,

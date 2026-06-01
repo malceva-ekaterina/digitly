@@ -3,17 +3,17 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Olympiad\StoreBracketRequest;
 use App\Http\Requests\Olympiad\StoreOlympiadRequest;
 use App\Http\Requests\Olympiad\UpdateOlympiadRequest;
 use App\Http\Requests\Olympiad\UpdateScheduleOlympiadRequest;
 use App\Http\Resources\OlympiadResource;
 use App\Models\Institution;
 use App\Models\Olympiad;
-use App\Models\OlympiadModerationLog;
+use App\Models\OlympiadScoreBracket;
 use App\Models\User;
 use App\Notifications\NewOlympiad;
-use App\Notifications\OlympiadApproved;
-use App\Notifications\OlympiadRejected;
+use App\Notifications\OlympiadToDraft;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Notification;
 
@@ -79,15 +79,27 @@ class OlympiadController extends Controller
     {
         $olympiad = Olympiad::find($id);
 
-        if (!$olympiad->status == 'draft' or !$olympiad->status == 'approved')
+        if ($olympiad->status !== 'draft' && $olympiad->status !== 'approved')
         {
-            return response()->json(['message' => 'Olympics is not available for editing.']);
+            return response()->json(['message' => 'Olympiad is not available for editing.'], 403);
         }
-        if ($olympiad->status == 'approved')
+        if ($olympiad->accessGrants())
         {
-            $olympiad->
+            return response()->json(['message' => 'Изменения запрещены, олимпиада уже продана'], 403);
         }
+
         $olympiad->update($request->all());
+
+        if ($olympiad->status === 'approved')
+        {
+            $adminsInstitution = $olympiad->institution->admins;
+            Notification::send($adminsInstitution, new OlympiadToDraft($olympiad));
+
+            $olympiad->status = 'draft';
+            $olympiad->save();
+
+            return response()->json('Олимпиада переведена в черновик. Требуется повторная модерация.');
+        }
         return response()->json(['data' => OlympiadResource::make($olympiad)]);
     }
     /**
@@ -134,10 +146,50 @@ class OlympiadController extends Controller
             ]);
     }
 
-    // PUT /api/v1/olympiads/{id}
+    // GET /api/v1/olympiads/{id}/brackets
 
-    public function update()
+    public function getBracket($id)
     {
+        $olympiad = Olympiad::find($id);
+        return response()->json($olympiad->scoreBrackets()->get());
+    }
 
+    public function createBracket($id, StoreBracketRequest $request)
+    {
+        $olympiad = Olympiad::find($id);
+
+        if ($request->min_percent > $request->max_percent)
+        {
+            return response()->json(['message' => 'The percentages are set incorrectly'], 422);
+        }
+
+        $scoreBrackets = OlympiadScoreBracket::create([
+            'olympiad_id' => $id,
+            'min_percent' => $request->min_percent,
+            'max_percent' => $request->max_percent,
+            'place' => $request->place_text,
+            'award_document_type' => $request->award_document_type,
+        ]);
+
+        return response()->json($scoreBrackets);
+    }
+
+
+    public function hide($id)
+    {
+        $olympiad = Olympiad::find($id);
+        $olympiad->status = 'unavailable';
+        $olympiad->save();
+
+        return response()->json(['message' => 'Status olympiad is unavailable']);
+    }
+
+    public function unhide($id)
+    {
+        $olympiad = Olympiad::find($id);
+        $olympiad->status = 'approved';
+        $olympiad->save();
+
+        return response()->json(['message' => 'Status olympiad is approved']);
     }
 }

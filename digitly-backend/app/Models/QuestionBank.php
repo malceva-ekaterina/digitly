@@ -34,4 +34,9 @@ class QuestionBank extends Model
     {
         return $this->belongsToMany(Question::class, 'question_question_bank');
     }
+
+    public function cartItems()
+    {
+        return $this->morphMany(CartItem::class, 'product');
+    }
 }

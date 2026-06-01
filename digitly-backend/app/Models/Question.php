@@ -42,4 +42,9 @@ class Question extends Model
     {
         return $this->belongsToMany(Olympiad::class, 'olympiad_questions');
     }
+
+    public function isAutoScorable(): bool
+    {
+        return !in_array($this->type, ['essay']);
+    }
 }

@@ -83,7 +83,6 @@ class Olympiad extends Model
         return $this->questions()->where('question_id', $questionId)->exists();
     }
 
-
     public function scoreBrackets()
     {
         return $this->hasMany(OlympiadScoreBracket::class);
@@ -96,5 +95,29 @@ class Olympiad extends Model
     public function ageGroup()
     {
         return $this->belongsTo(AgeGroup::class);
+    }
+
+    public function accessGrants()
+    {
+        return $this->morphMany(AccessGrant::class, 'product');
+    }
+
+    public function countTotalScore()
+    {
+        return $this->questions->sum('weight');
+    }
+
+    public function attempts() 
+    {
+        return $this->hasMany(OlympiadAttempt::class);
+    }
+    public function participations() 
+    {
+        return $this->hasMany(Participation::class);
+    }
+
+    public function cartItems()
+    {
+        return $this->morphMany(CartItem::class, 'product');
     }
 }

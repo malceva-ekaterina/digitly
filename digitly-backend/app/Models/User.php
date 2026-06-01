@@ -188,4 +188,48 @@ class User extends Authenticatable
         return $this->hasMany(QuestionBank::class, 'created_by');
     }
 
+    public function cart()
+    {
+        return $this->hasOne(ShoppingCart::class);
+    }
+
+    public function invoices()
+    {
+        return $this->hasMany(Invoice::class);
+    }
+
+    public function orders()
+    {
+        return $this->hasMany(Order::class, 'customer_id');
+    }
+
+    public function accessGrants()
+    {
+        return $this->hasMany(AccessGrant::class, 'recipient_user_id');
+    }
+    public function accessToOlympiad($id)
+    {
+        return $this->accessGrants()->where('product_id', $id)->where('product_type', 'olympiad')->where('status', 'active');
+    }
+
+    public function participations()
+    {
+        return $this->hasMany(Participation::class, 'recipient_user_id');
+    }
+
+    public function awardDocuments()
+    {
+        return $this->hasMany(AwardDocument::class, 'recipient_user_id');
+    }
+
+    public function creatorKioskItems()
+    {
+        return $this->hasMany(KioskItem::class, 'created_by');
+    }
+
+    public function moderatorVersions()
+    {
+        return $this->hasMany(KioskItemVersion::class, 'moderated_by');
+    }
+    
 }

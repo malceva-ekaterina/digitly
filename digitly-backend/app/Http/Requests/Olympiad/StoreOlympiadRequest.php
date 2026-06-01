@@ -28,7 +28,6 @@ class StoreOlympiadRequest extends FormRequest
             'type' => ['required', 'in:permanent,scheduled'],
             'price_minor' => ['required', 'min:0'],
             // 'subject' => ['required', 'exists:olympiad_categories,id'],
-            // 'age_group' => ['required', 'exists:age_groups,id'],
         ];
     }
 }

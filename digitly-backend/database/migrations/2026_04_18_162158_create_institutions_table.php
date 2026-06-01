@@ -22,7 +22,7 @@ return new class extends Migration
             $table->foreignId('actual_address_id')->nullable()->constrained('adr_addresses')->onDelete('set null');
             $table->string('contact_email')->nullable();
             $table->string('contact_phone', 30)->nullable();
-            $table->foreignId('application_scan')->nullable()->constrained('attachments')->onDelete('set null');
+            // $table->foreignId('application_scan')->nullable()->constrained('attachments')->onDelete('set null');
             $table->foreignId('logotype_id')->nullable()->constrained('attachments')->onDelete('set null');
             $table->foreignId('signature_id')->nullable()->constrained('attachments')->onDelete('set null');
             $table->foreignId('seal_id')->nullable()->constrained('attachments')->onDelete('set null');

@@ -1,0 +1,35 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+        Schema::create('order_item_recipients', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('order_item_id')->constrained()->onDelete('cascade');
+            $table->foreignId('recipient_user_id')->nullable()->constrained('users')->onDelete('set null');
+            $table->string('recipient_email', 255);
+            $table->string('recipient_fullname', 255);
+            $table->string('invite_token', 100)->nullable();
+            $table->timestamp('invite_expires_at')->nullable();
+            $table->timestamp('invite_sent_at')->nullable();
+            $table->timestamp('registered_at')->nullable();
+            
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::dropIfExists('order_item_recipients');
+    }
+};

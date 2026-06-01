@@ -15,10 +15,16 @@ return Application::configure(basePath: dirname(__DIR__))
         //
     })
     ->withMiddleware(function (Middleware $middleware) {
-    $middleware->alias([
-        'institution.context' => \App\Http\Middleware\InstitutionContext::class,
-    ]);
+        $middleware->alias([
+            'institution.context' => \App\Http\Middleware\InstitutionContext::class,
+        ]);
     })
+    ->withMiddleware(function (Middleware $middleware) {
+        $middleware->alias([
+            'olympiad.editable' => \App\Http\Middleware\OlympiadEditable::class,
+        ]);
+    })
+
     ->withExceptions(function (Exceptions $exceptions): void {
         //
     })->create();

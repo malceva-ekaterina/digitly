@@ -19,6 +19,7 @@ class QuestionResource extends JsonResource
             'prompt' => $this->prompt,
             'type' => $this->type,
             'weight' => $this->weight,
+            'metadata' => $this->metadata,
             'random_options' => $this->random_options,
         ];
     }

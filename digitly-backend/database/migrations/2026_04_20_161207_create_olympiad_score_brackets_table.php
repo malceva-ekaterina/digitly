@@ -17,6 +17,7 @@ return new class extends Migration
             $table->decimal('min_percent', 5, 2);
             $table->decimal('max_percent', 5, 2);
             $table->string('place', 50);
+            $table->string('award_document_type', 50);
             $table->timestamps();
         });
     }

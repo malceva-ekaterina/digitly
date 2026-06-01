@@ -35,4 +35,11 @@ return [
         ],
     ],
 
+    'paykeeper' => [
+        'server' => env('PAYKEEPER_SERVER'),
+        'login' => env('PAYKEEPER_LOGIN'),
+        'password' => env('PAYKEEPER_PASSWORD'),
+        'secret' => env('PAYKEEPER_SECRET_KEY'),
+    ],
+
 ];

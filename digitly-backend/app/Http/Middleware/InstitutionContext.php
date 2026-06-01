@@ -19,8 +19,15 @@ class InstitutionContext
         $institutionId = $request->route('id') ?? $request->route('institution');
 
         $user = $request->user();
+        $institution = Institution::find($institutionId);
+        
+        if (!$institution) {
+            return response()->json([
+                'message' => 'Not Found'
+            ], 404);
+        }
 
-        if (!$user || !Institution::find($institutionId)->hasMember($user->id)) {
+        if (!$user || !$institution->hasMember($user->id)) {
             return response()->json([
                 'message' => 'Доступ запрещен. Вы не являетесь участником этой организации.'
             ], 403);

@@ -48,12 +48,8 @@ class OlympiadModerationScreen extends Screen
      */
     public function commandBar(): iterable
     {
-        return [
-
-
-        ];
+        return [];
     }
-
     /**
      * The screen's layout elements.
      *
@@ -124,7 +120,6 @@ class OlympiadModerationScreen extends Screen
     public function approve(Request $request)
     {
         $olympiad = Olympiad::find($request->id);
-        // dd($olympiad);
 
         $olympiad->update([
             'status' => 'approved',
