@@ -126,26 +126,58 @@ function CollegeCard({ college, isActive = false }) {
   );
 }
 
+
 //  ИСПРАВЛЕННЫЙ КОМПОНЕНТ КНОПКИ ПРОФИЛЯ 
 function ProfileButton() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [userName, setUserName] = useState('');
   const [isOpen, setIsOpen] = useState(false);
+  const [loading, setLoading] = useState(true);
   const buttonRef = useRef(null);
   const menuRef = useRef(null);
 
-  useEffect(() => {
-    const token = localStorage.getItem('token');
-    const user = localStorage.getItem('user');
-    setIsAuthenticated(!!token);
-    if (user) {
-      try {
-        const userData = JSON.parse(user);
-        setUserName(userData.name || userData.fullname || 'Пользователь');
-      } catch {
-        setUserName('Пользователь');
+  // Получение текущего пользователя с сервера
+  const fetchCurrentUser = async () => {
+    try {
+      const response = await fetch('/api/v1/user', {
+        credentials: 'include', 
+        headers: {
+          'Accept': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest'
+        }
+      });
+      
+      if (response.ok) {
+        const userData = await response.json();
+        setIsAuthenticated(true);
+        setUserName(userData.name || userData.fullname || userData.email?.split('@')[0] || 'Пользователь');
+        localStorage.setItem('user', JSON.stringify(userData));
+      } else if (response.status === 401) {
+
+        setIsAuthenticated(false);
+        setUserName('');
+        localStorage.removeItem('user');
       }
+    } catch (error) {
+      console.error('Ошибка при получении пользователя:', error);
+      setIsAuthenticated(false);
+    } finally {
+      setLoading(false);
     }
+  };
+
+  useEffect(() => {
+    fetchCurrentUser();
+  }, []);
+
+  useEffect(() => {
+    const handleStorageChange = (e) => {
+      if (e.key === 'auth_check' || e.key === 'logout') {
+        fetchCurrentUser();
+      }
+    };
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
   }, []);
 
   useEffect(() => {
@@ -159,19 +191,44 @@ function ProfileButton() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [isOpen]);
 
-  const toggleMenu = () => setIsOpen(!isOpen);
+  const toggleMenu = () => {
+    setIsOpen(!isOpen);
+  };
   
   const goTo = (path) => {
-    console.log('Переход на:', path);
     setIsOpen(false);
     window.location.href = path;
   };
   
-  const logout = () => {
-    localStorage.removeItem('token');
+  const logout = async () => {
+    try {
+      await fetch('/api/v1/logout', {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest'
+        }
+      });
+    } catch (error) {
+      console.error('Ошибка при выходе:', error);
+    }
+    
     localStorage.removeItem('user');
-    window.location.href = '/';
+    localStorage.setItem('logout', Date.now().toString());
+    setIsAuthenticated(false);
+    setIsOpen(false);
+    
+    router.push('/');
   };
+
+  if (loading) {
+    return (
+      <div className="bg-white rounded-xl px-3 sm:px-4 md:px-4 lg:px-5 py-1.5 sm:py-1.5 md:py-2 lg:py-1.5">
+        <div className="w-16 h-5 bg-gray-200 rounded animate-pulse"></div>
+      </div>
+    );
+  }
 
   if (!isAuthenticated) {
     return (
