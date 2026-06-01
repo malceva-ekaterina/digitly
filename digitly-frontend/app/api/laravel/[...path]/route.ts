@@ -2,68 +2,60 @@ import { NextRequest, NextResponse } from 'next/server';
 
 const LARAVEL_API_URL = process.env.LARAVEL_API_URL || 'http://localhost:8000';
 
-// Универсальная функция для проксирования запросов
 async function proxyRequest(
   request: NextRequest,
   params: { path: string[] },
   method: string
 ) {
   const path = params.path.join('/');
-  const searchParams = request.nextUrl.searchParams;
-  const queryString = searchParams.toString();
   
-  // Получаем токен из куки или из заголовка Authorization
-  let token = request.cookies.get('token')?.value;
-  
-  // Также проверяем заголовок Authorization (на случай если токен пришел от клиента)
-  const authHeader = request.headers.get('authorization');
-  if (!token && authHeader?.startsWith('Bearer ')) {
-    token = authHeader.substring(7);
-  }
+  console.log(`[Proxy] ==== START ${method} /api/laravel/${path} ====`);
+  console.log(`[Proxy] LARAVEL_API_URL: ${LARAVEL_API_URL}`);
   
   // Формируем URL для Laravel
   let url = `${LARAVEL_API_URL}/${path}`;
-  if (queryString) {
-    url += `?${queryString}`;
-  }
-  
-  console.log(`[Proxy] ${method} ${url} -> Token: ${token ? 'Present' : 'Missing'}`);
-  
-  // Подготавливаем заголовки
-  const headers: HeadersInit = {
-    'Accept': 'application/json',
-    'Content-Type': 'application/json',
-  };
-  
-  if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
-  }
-  
-  // Копируем дополнительные заголовки от клиента (если нужно)
-  const clientContentType = request.headers.get('content-type');
-  if (clientContentType && clientContentType !== 'application/json') {
-    headers['Content-Type'] = clientContentType;
-  }
+  console.log(`[Proxy] Target URL: ${url}`);
   
   try {
-    // Подготавливаем тело запроса для методов POST, PUT, PATCH
-    let body: BodyInit | null = null;
-    if (method !== 'GET' && method !== 'HEAD' && method !== 'DELETE') {
-      // Пытаемся прочитать тело как JSON
+    // Получаем тело запроса для POST
+    let body = null;
+    let bodyString = '';
+    if (method === 'POST') {
       try {
         const clonedRequest = request.clone();
-        body = await clonedRequest.text();
+        bodyString = await clonedRequest.text();
+        body = bodyString;
+        console.log(`[Proxy] Request body: ${bodyString}`);
       } catch (e) {
-        console.error('Error reading request body:', e);
+        console.error('Error reading body:', e);
       }
     }
+    
+    // Подготавливаем заголовки
+    const headers: HeadersInit = {
+      'Accept': 'application/json',
+      'Content-Type': 'application/json',
+    };
+    
+    // Добавляем токен если есть
+    const token = request.cookies.get('token')?.value;
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+      console.log('[Proxy] Token found');
+    } else {
+      console.log('[Proxy] No token found');
+    }
+    
+    console.log(`[Proxy] Sending ${method} request to Laravel...`);
     
     // Отправляем запрос к Laravel
     const response = await fetch(url, {
       method,
       headers,
-      body,
+      body: body ? body : undefined,
     });
+    
+    console.log(`[Proxy] Laravel response status: ${response.status}`);
     
     // Получаем данные ответа
     let data;
@@ -74,55 +66,40 @@ async function proxyRequest(
       data = await response.text();
     }
     
+    console.log(`[Proxy] Response data:`, data);
+    
     // Создаем ответ для клиента
     const nextResponse = NextResponse.json(data, {
       status: response.status,
-      headers: {
-        'Cache-Control': 'no-store, no-cache, must-revalidate',
-      },
     });
-    
-    // Если Laravel вернул новые куки (например, при логине), передаем их клиенту
-    const laravelCookies = response.headers.get('set-cookie');
-    if (laravelCookies) {
-      nextResponse.headers.set('Set-Cookie', laravelCookies);
-    }
     
     // Если в ответе есть токен (при логине), сохраняем его в куку
     if (data.token) {
-      const maxAge = 60 * 60 * 24; // 24 часа по умолчанию
+      console.log('[Proxy] Token received, saving to cookie');
       nextResponse.cookies.set('token', data.token, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
+        secure: false, // Для localhost ставим false
         sameSite: 'lax',
-        maxAge: maxAge,
+        maxAge: 60 * 60 * 24,
         path: '/',
       });
-      console.log('[Proxy] Token saved to cookie');
     }
     
+    console.log(`[Proxy] ==== END ${method} /api/laravel/${path} ====`);
     return nextResponse;
+    
   } catch (error) {
     console.error(`[Proxy Error] ${method} ${url}:`, error);
     return NextResponse.json(
       { 
         message: 'Ошибка соединения с сервером',
-        error: process.env.NODE_ENV === 'development' ? String(error) : undefined
+        error: String(error)
       },
       { status: 500 }
     );
   }
 }
 
-// GET запросы
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { path: string[] } }
-) {
-  return proxyRequest(request, params, 'GET');
-}
-
-// POST запросы
 export async function POST(
   request: NextRequest,
   { params }: { params: { path: string[] } }
@@ -130,26 +107,9 @@ export async function POST(
   return proxyRequest(request, params, 'POST');
 }
 
-// PUT запросы
-export async function PUT(
+export async function GET(
   request: NextRequest,
   { params }: { params: { path: string[] } }
 ) {
-  return proxyRequest(request, params, 'PUT');
-}
-
-// PATCH запросы
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: { path: string[] } }
-) {
-  return proxyRequest(request, params, 'PATCH');
-}
-
-// DELETE запросы
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: { path: string[] } }
-) {
-  return proxyRequest(request, params, 'DELETE');
+  return proxyRequest(request, params, 'GET');
 }
