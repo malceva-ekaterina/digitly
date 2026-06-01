@@ -31,13 +31,12 @@ export default function Login() {
         localStorage.setItem('is_authenticated', 'true');
         localStorage.setItem('user', JSON.stringify(data.user));
         
-        // Сохраняем токен для fallback (если кука не установилась)
+        // Сохраняем токен в localStorage для fallback
         if (data.token) {
           localStorage.setItem('auth_token', data.token);
-          console.log('Token saved to localStorage');
         }
         
-        // Принудительно обновляем страницу, чтобы ProfileButton перезагрузился
+        // Перезагружаем страницу
         window.location.href = '/';
       } else {
         setError(data.message || 'Неверный email или пароль');

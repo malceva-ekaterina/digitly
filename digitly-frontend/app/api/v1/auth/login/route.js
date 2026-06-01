@@ -8,35 +8,29 @@ export async function POST(request) {
     
     console.log('1. Login attempt for:', email);
     
-    // 1. Получаем CSRF cookie от Laravel
+    // Получаем CSRF cookie от Laravel
     const csrfResponse = await fetch(`${BACKEND_URL}/sanctum/csrf-cookie`, {
       method: 'GET',
       credentials: 'include',
     });
     
-    // Получаем все cookies из ответа
-    const csrfCookies = csrfResponse.headers.get('set-cookie');
-    console.log('2. CSRF cookies received');
+    const csrfCookies = csrfResponse.headers.get('set-cookie') || '';
     
-    // 2. Отправляем запрос на вход в Laravel
+    // Отправляем запрос на вход в Laravel
     const loginResponse = await fetch(`${BACKEND_URL}/api/v1/auth/login`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
-        'Cookie': csrfCookies || '',
+        'Cookie': csrfCookies,
       },
       body: JSON.stringify({ email, password }),
     });
     
     const data = await loginResponse.json();
-    console.log('3. Login response status:', loginResponse.status);
+    console.log('2. Login response status:', loginResponse.status);
     
     if (loginResponse.ok && data.token) {
-      // Получаем cookies из ответа Laravel (если есть)
-      const laravelCookies = loginResponse.headers.get('set-cookie');
-      console.log('4. Laravel cookies:', laravelCookies);
-      
       // Создаем ответ для клиента
       const nextResponse = NextResponse.json({
         success: true,
@@ -44,7 +38,7 @@ export async function POST(request) {
         token: data.token
       });
       
-      // Устанавливаем куку auth_token для Next.js
+      // Устанавливаем куку auth_token
       const maxAge = remember ? 60 * 60 * 24 * 30 : 60 * 60 * 24;
       
       nextResponse.cookies.set('auth_token', data.token, {
@@ -55,12 +49,7 @@ export async function POST(request) {
         path: '/',
       });
       
-      // Если Laravel вернул свои куки, передаем их клиенту
-      if (laravelCookies) {
-        nextResponse.headers.set('Set-Cookie', laravelCookies);
-      }
-      
-      console.log('5. Auth token cookie set successfully');
+      console.log('3. Auth token cookie set successfully');
       return nextResponse;
     }
     
