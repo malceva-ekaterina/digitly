@@ -3,6 +3,7 @@ import { useState, useEffect, useRef } from "react";
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { createPortal } from 'react-dom';
+import { z } from "zod";
 
 //  МАССИВЫ С ДАННЫМИ 
 const allReviews = [
@@ -134,13 +135,14 @@ function ProfileButton() {
   const [userName, setUserName] = useState('');
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(true);
-  const buttonRef = useRef(null);
   const menuRef = useRef(null);
-  const router = useRouter(); // <-- теперь работает, так как импортирован
+  const buttonRef = useRef(null);
+  const router = useRouter();
 
+  // Получение CSRF токена
   const fetchCsrfToken = async () => {
     try {
-      await fetch('/sanctum/csrf-cookie', {
+      await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000'}/sanctum/csrf-cookie`, {
         credentials: 'include',
       });
     } catch (error) {
@@ -148,6 +150,7 @@ function ProfileButton() {
     }
   };
 
+  // Получение текущего пользователя с сервера
   const fetchCurrentUser = async () => {
     try {
       await fetchCsrfToken();
@@ -165,13 +168,12 @@ function ProfileButton() {
         const userData = await response.json();
         setIsAuthenticated(true);
         setUserName(userData.name || userData.fullname || userData.email?.split('@')[0] || 'Пользователь');
+        // Сохраняем в localStorage только для отображения, не для проверки авторизации!
         localStorage.setItem('user', JSON.stringify(userData));
-        localStorage.setItem('is_authenticated', 'true');
       } else if (response.status === 401) {
         setIsAuthenticated(false);
         setUserName('');
         localStorage.removeItem('user');
-        localStorage.removeItem('is_authenticated');
       }
     } catch (error) {
       console.error('Ошибка при получении пользователя:', error);
@@ -182,32 +184,7 @@ function ProfileButton() {
   };
 
   useEffect(() => {
-    const savedAuth = localStorage.getItem('is_authenticated') === 'true';
-    const savedUser = localStorage.getItem('user');
-    
-    if (savedAuth && savedUser) {
-      try {
-        const userData = JSON.parse(savedUser);
-        setIsAuthenticated(true);
-        setUserName(userData.name || userData.fullname || userData.email?.split('@')[0] || 'Пользователь');
-        setLoading(false);
-        fetchCurrentUser();
-      } catch {
-        fetchCurrentUser();
-      }
-    } else {
-      fetchCurrentUser();
-    }
-  }, []);
-
-  useEffect(() => {
-    const handleAuthChange = (event) => {
-      if (event.key === 'auth_change') {
-        fetchCurrentUser();
-      }
-    };
-    window.addEventListener('storage', handleAuthChange);
-    return () => window.removeEventListener('storage', handleAuthChange);
+    fetchCurrentUser();
   }, []);
 
   useEffect(() => {
@@ -221,20 +198,13 @@ function ProfileButton() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [isOpen]);
 
-  const toggleMenu = () => {
-    setIsOpen(!isOpen);
-  };
+  const toggleMenu = () => setIsOpen(!isOpen);
+  const handleNavigation = (path) => { setIsOpen(false); router.push(path); };
   
-  const goTo = (path) => {
-    setIsOpen(false);
-    router.push(path);
-  };
-  
-  const logout = async () => {
+  const handleLogout = async () => {
     try {
       await fetchCsrfToken();
-      
-      const response = await fetch('/api/v1/logout', {
+      await fetch('/api/v1/logout', {
         method: 'POST',
         credentials: 'include',
         headers: {
@@ -243,21 +213,13 @@ function ProfileButton() {
           'X-Requested-With': 'XMLHttpRequest'
         }
       });
-      
-      if (response.ok) {
-        console.log('Выход выполнен успешно');
-      }
     } catch (error) {
       console.error('Ошибка при выходе:', error);
     }
     
     localStorage.removeItem('user');
-    localStorage.removeItem('is_authenticated');
-    localStorage.setItem('auth_change', Date.now().toString());
-    
     setIsAuthenticated(false);
     setIsOpen(false);
-    
     router.push('/');
   };
 
@@ -289,60 +251,57 @@ function ProfileButton() {
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
         </svg>
         <span className="hidden sm:inline max-w-[100px] truncate text-gray-700">{userName.split(' ')[0]}</span>
-        <svg className={`w-3 h-3 sm:w-3.5 sm:h-3.5 ml-1 transition-transform text-gray-500 ${isOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg className={`w-3 h-3 sm:w-3.5 sm:h-3.5 ml-1 transition-transform ${isOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
         </svg>
       </button>
 
       {isOpen && (
-        <div
-          ref={menuRef}
-          className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg overflow-hidden z-50"
-        >
-          <div
-            onClick={() => goTo('/profile')}
-            className="block w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer"
-          >
+        <div ref={menuRef} className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg overflow-hidden z-50">
+          <button onClick={() => handleNavigation('/profile')} className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
             Личный кабинет
-          </div>
-          <div
-            onClick={() => goTo('/profile/security')}
-            className="block w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer"
-          >
+          </button>
+          <button onClick={() => handleNavigation('/profile/security')} className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
             Безопасность
-          </div>
-          <div
-            onClick={() => goTo('/profile/settings')}
-            className="block w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer"
-          >
+          </button>
+          <button onClick={() => handleNavigation('/profile/settings')} className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
             Настройки
-          </div>
+          </button>
           <div className="border-t border-gray-100"></div>
-          <div
-            onClick={logout}
-            className="w-full text-left px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
-          >
+          <button onClick={handleLogout} className="w-full text-left px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors">
             Выйти
-          </div>
+          </button>
         </div>
       )}
     </div>
   );
 }
 
-// Компонент навигации (один на всю страницу)
-function NavigationButtons() {
+// ========== КОМПОНЕНТ ВЕРХНЕЙ ПАНЕЛИ ==========
+function Header() {
   return (
-    <div className="flex items-center gap-1.5 sm:gap-2 md:gap-3 lg:gap-4">
-      <Link href="/olympiads" className="bg-white rounded-xl flex items-center justify-center gap-0.5 sm:gap-1 md:gap-1.5 font-sans font-medium shadow-sm whitespace-nowrap text-[13px] sm:text-sm md:text-base lg:text-[15px] px-3 sm:px-4 md:px-4 lg:px-5 py-1.5 sm:py-1.5 md:py-2 lg:py-1.5 hover:bg-gray-50 transition-colors">
-        <span className="text-gray-700">Олимпиады</span>
-        <img src="chifra/arrow.png" alt="стрелка" className="w-3 h-3 sm:w-3.5 sm:h-3.5 md:w-4 md:h-4 lg:w-4 lg:h-4" />
-      </Link>
-      <Link href="/methodics" className="bg-white rounded-xl flex items-center justify-center gap-0.5 sm:gap-1 md:gap-1.5 font-sans font-medium shadow-sm whitespace-nowrap text-[13px] sm:text-sm md:text-base lg:text-[15px] px-3 sm:px-4 md:px-4 lg:px-5 py-1.5 sm:py-1.5 md:py-2 lg:py-1.5 hover:bg-gray-50 transition-colors">
-        <span className="text-gray-700">Методочки</span>
-        <img src="chifra/arrow.png" alt="стрелка" className="w-3 h-3 sm:w-3.5 sm:h-3.5 md:w-4 md:h-4 lg:w-4 lg:h-4" />
-      </Link>
-      <ProfileButton />
+    <div className="w-full h-[278px] relative" style={{ background: 'linear-gradient(135deg, #312C85, #8E51FF)'}}>
+      <div className="absolute top-4 left-0 right-0 z-20 flex justify-between items-center px-4 sm:px-6 md:px-8">
+        <div>
+          <Link href="/">
+            <img src="/chifra/logo_chifra.png" alt="Цифра" className="hidden sm:block w-12 sm:w-16 md:w-20 lg:w-24 h-auto cursor-pointer" />
+          </Link>
+        </div>
+        <div className="flex items-center gap-1.5 sm:gap-2 md:gap-3 lg:gap-4">
+          <Link href="/olympiads" className="bg-white rounded-xl flex items-center justify-center gap-0.5 sm:gap-1 md:gap-1.5 font-sans font-medium shadow-sm whitespace-nowrap text-[13px] sm:text-sm md:text-base lg:text-[15px] px-3 sm:px-4 md:px-4 lg:px-5 py-1.5 sm:py-1.5 md:py-2 lg:py-1.5 hover:bg-gray-50 transition-colors">
+            <span>Олимпиады</span>
+            <img src="/chifra/arrow.png" alt="стрелка" className="w-3 h-3 sm:w-3.5 sm:h-3.5 md:w-4 md:h-4 lg:w-4 lg:h-4" />
+          </Link>
+          <Link href="/methodics" className="bg-white rounded-xl flex items-center justify-center gap-0.5 sm:gap-1 md:gap-1.5 font-sans font-medium shadow-sm whitespace-nowrap text-[13px] sm:text-sm md:text-base lg:text-[15px] px-3 sm:px-4 md:px-4 lg:px-5 py-1.5 sm:py-1.5 md:py-2 lg:py-1.5 hover:bg-gray-50 transition-colors">
+            <span>Методочки</span>
+            <img src="/chifra/arrow.png" alt="стрелка" className="w-3 h-3 sm:w-3.5 sm:h-3.5 md:w-4 md:h-4 lg:w-4 lg:h-4" />
+          </Link>
+          <ProfileButton />
+        </div>
+      </div>
+      <div className='absolute bottom-4 left-0 right-0'>
+        <p className='font-sans text-white text-5xl sm:text-6xl md:text-7xl font-bold p-4'>Личный кабинет</p>
+      </div>
     </div>
   );
 }
