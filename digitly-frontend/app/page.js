@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { createPortal } from 'react-dom';
 
 //  МАССИВЫ С ДАННЫМИ 
@@ -135,7 +136,7 @@ function ProfileButton() {
   const [loading, setLoading] = useState(true);
   const buttonRef = useRef(null);
   const menuRef = useRef(null);
-  const router = useRouter(); // <-- ДОБАВИТЬ ЭТУ СТРОКУ!
+  const router = useRouter(); // <-- теперь работает, так как импортирован
 
   const fetchCsrfToken = async () => {
     try {
@@ -226,7 +227,7 @@ function ProfileButton() {
   
   const goTo = (path) => {
     setIsOpen(false);
-    router.push(path); // <-- ИСПРАВЛЕНО: используем router.push
+    router.push(path);
   };
   
   const logout = async () => {
@@ -257,7 +258,7 @@ function ProfileButton() {
     setIsAuthenticated(false);
     setIsOpen(false);
     
-    router.push('/'); // <-- ИСПРАВЛЕНО: используем router.push
+    router.push('/');
   };
 
   if (loading) {
