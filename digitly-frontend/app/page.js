@@ -135,6 +135,7 @@ function ProfileButton() {
   const [loading, setLoading] = useState(true);
   const buttonRef = useRef(null);
   const menuRef = useRef(null);
+  const router = useRouter(); // <-- ДОБАВИТЬ ЭТУ СТРОКУ!
 
   const fetchCsrfToken = async () => {
     try {
@@ -225,7 +226,7 @@ function ProfileButton() {
   
   const goTo = (path) => {
     setIsOpen(false);
-    window.location.href = path;
+    router.push(path); // <-- ИСПРАВЛЕНО: используем router.push
   };
   
   const logout = async () => {
@@ -256,7 +257,7 @@ function ProfileButton() {
     setIsAuthenticated(false);
     setIsOpen(false);
     
-    router.push('/');
+    router.push('/'); // <-- ИСПРАВЛЕНО: используем router.push
   };
 
   if (loading) {
@@ -295,8 +296,7 @@ function ProfileButton() {
       {isOpen && (
         <div
           ref={menuRef}
-          className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg overflow-hidden"
-          style={{ position: 'absolute', top: '100%', right: 0, zIndex: 2147483647 }}
+          className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg overflow-hidden z-50"
         >
           <div
             onClick={() => goTo('/profile')}
