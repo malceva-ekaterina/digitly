@@ -36,6 +36,8 @@ Route::prefix('v1')->group(function() {
         Route::post('password/reset', [ResetPasswordController::class, 'reset']);
 
     });
+    Route::get('user', [LoginController::class, 'me']);
+
 
     Route::get('email/verify/{id}/{hash}', [VerifyEmailController::class, 'verify'])
         ->name('verification.verify');
